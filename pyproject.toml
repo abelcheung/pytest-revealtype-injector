@@ -1,12 +1,15 @@
 #:schema https://json.schemastore.org/pyproject.json
 
 [build-system]
-requires = ['flit_core ~= 3.4']
-build-backend = 'flit_core.buildapi'
+requires = ['hatchling']
+build-backend = 'hatchling.build'
 
 [project]
 name = 'pytest-revealtype-injector'
-dynamic = ['version', 'description']
+dynamic = ['version']
+description = """Pytest plugin for replacing reveal_type() calls inside
+test functions with static and runtime type checking result comparison,
+for confirming type annotation validity."""
 readme = 'README.md'
 requires-python = '>=3.10'
 license = {text = 'MIT'}
@@ -35,6 +38,7 @@ classifiers = [
     'Development Status :: 4 - Beta',
     'Programming Language :: Python',
     'Intended Audience :: Developers',
+    'Framework :: Pytest',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.10',
@@ -49,17 +53,22 @@ classifiers = [
 [project.urls]
 homepage = 'https://github.com/abelcheung/pytest-revealtype-injector'
 
-[project.optional-dependencies]
-typechecker = [
-    'mypy >= 1.11.2',
-    'pyright ~= 1.1',
-]
-
 [project.entry-points.pytest11]
 pytest-revealtype-injector = "pytest_revealtype_injector.plugin"
 
 [tool.flit.module]
 name = 'pytest_revealtype_injector'
+
+[tool.hatch.version]
+path = 'src/pytest_revealtype_injector/__init__.py'
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    '**/.*'
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pytest_revealtype_injector"]
 
 [tool.pyright]
 typeCheckingMode = 'strict'
