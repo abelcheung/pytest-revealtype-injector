@@ -1,0 +1,35 @@
+name: Automated Push/PR Check
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'COPYING*'
+      - '.*'
+      - '!.github/**'
+    branches:
+      - 'main'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'COPYING*'
+      - '.*'
+      - '!.github/**'
+
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        pyver:
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+    uses: ./.github/workflows/typecheck_inc.yml
+    with:
+      gitref: ${{ github.ref }}
+      pyver: ${{ matrix.pyver }}
+

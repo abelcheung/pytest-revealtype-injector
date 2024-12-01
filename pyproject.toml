@@ -64,7 +64,8 @@ path = 'src/pytest_revealtype_injector/__init__.py'
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    '**/.*'
+    '**/.*',
+    'CHANGELOG.md',
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -123,13 +124,9 @@ testpaths = [
     "tests",
 ]
 
+# We only use version determination logic from python-semantic-release,
+# and never does any permanent change with it
 [tool.semantic_release]
-build_command = """
-    pip install build && python -m build
-"""
-commit_message = 'chore(release): bump version to {version}'
 version_variables = ['src/pytest_revealtype_injector/__init__.py:__version__']
+major_on_zero = false  # switch on for 1.0.0
 
-[tool.semantic_release.commit_parser_options]
-minor_tags = ['feat']
-patch_tags = ['fix', 'perf', 'docs', 'chore']

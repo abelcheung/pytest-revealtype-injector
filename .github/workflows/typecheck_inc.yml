@@ -1,0 +1,49 @@
+name: (Reuse) Type check
+
+on:
+  workflow_call:
+    inputs:
+      gitref:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: 'ubuntu-24.04'
+      pyver:
+        required: true
+        type: string
+
+jobs:
+  check:
+    name: Type checking
+    runs-on: ${{ inputs.os }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.gitref }}
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        version: "0.5.5"
+        python-version: ${{ inputs.pyver }}
+        enable-cache: true
+        cache-dependency-glob: |
+          ./pyproject.toml
+
+    - name: Install prerequisites
+      run: |
+        uv venv --python-preference only-managed
+        uv pip install -r pyproject.toml
+
+    - name: Pyright check
+      run: |
+        source .venv/bin/activate
+        pyright src/
+
+    - name: Mypy check
+      if: success() || failure()
+      run: |
+        source .venv/bin/activate
+        mypy src/
+
