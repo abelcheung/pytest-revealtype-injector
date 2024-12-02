@@ -168,8 +168,25 @@ class _MypyAdapter(TypeCheckerAdapter):
             # Try stripping those character and pray we get something
             # usable for evaluation
             expression = m["type"].translate({ord(c): None for c in "*?="})
-            # Unlike pyright, mypy output doesn't contain variable name
-            cls.typechecker_result[pos] = VarType(None, ForwardRef(expression))
+            try:
+                # Unlike pyright, mypy output doesn't contain variable name
+                cls.typechecker_result[pos] = VarType(None, ForwardRef(expression))
+            except SyntaxError as e:
+                if (
+                    m := re.fullmatch(r"<Deleted '(?P<var>.+)'>", expression)
+                ) is not None:
+                    raise TypeCheckerError(
+                        "{} does not support reusing deleted variable '{}'".format(
+                            cls.id, m["var"]
+                        ),
+                        diag["file"],
+                        diag["line"],
+                    ) from e
+                raise TypeCheckerError(
+                    f"Cannot parse type expression '{expression}'",
+                    diag["file"],
+                    diag["line"],
+                ) from e
 
     @classmethod
     def create_collector(
