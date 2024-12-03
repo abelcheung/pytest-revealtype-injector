@@ -11,9 +11,13 @@ from collections.abc import (
 from typing import (
     Any,
     ForwardRef,
+    Literal,
+    TypedDict,
+    cast,
 )
 
 import pytest
+import schema as s
 
 from ..models import (
     FilePos,
@@ -25,6 +29,21 @@ from ..models import (
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.INFO)
+
+
+class _PyrightDiagPosition(TypedDict):
+    line: int
+    character: int
+
+class _PyrightDiagRange(TypedDict):
+    start: _PyrightDiagPosition
+    end: _PyrightDiagPosition
+
+class _PyrightDiagItem(TypedDict):
+    file: str
+    severity: Literal["information", "warning", "error"]
+    message: str
+    range: _PyrightDiagRange
 
 
 class _NameCollector(NameCollectorBase):
@@ -47,6 +66,21 @@ class _PyrightAdapter(TypeCheckerAdapter):
     id = "pyright"
     typechecker_result = {}
     _type_mesg_re = re.compile('^Type of "(?P<var>.+?)" is "(?P<type>.+?)"$')
+    # We only care about diagnostic messages that contain type information.
+    # Metadata not specified here.
+    _schema = s.Schema({
+        "file": str,
+        "severity": s.Or(
+            s.Schema("information"),
+            s.Schema("warning"),
+            s.Schema("error"),
+        ),
+        "message": str,
+        "range": {
+            "start": {"line": int, "character": int},
+            "end": {"line": int, "character": int},
+        },
+    })
 
     @classmethod
     def run_typechecker_on(cls, paths: Iterable[pathlib.Path]) -> None:
@@ -67,22 +101,17 @@ class _PyrightAdapter(TypeCheckerAdapter):
         if len(proc.stderr):
             raise TypeCheckerError(proc.stderr.decode(), None, None)
 
-        # TODO Pyright json schema validation
         report = json.loads(proc.stdout)
-        if proc.returncode:
-            for diag in report["generalDiagnostics"]:
-                if diag["severity"] != "error":
-                    continue
-                # Pyright report lineno is 0-based,
-                # OTOH python frame lineno is 1-based
-                lineno = diag["range"]["start"]["line"] + 1
-                filename = pathlib.Path(diag["file"]).name
-                raise TypeCheckerError(diag["message"], filename, lineno)
-        for diag in report["generalDiagnostics"]:
-            if diag["severity"] != "information":
+        for item in report["generalDiagnostics"]:
+            diag = cast(_PyrightDiagItem, cls._schema.validate(item))
+            if diag["severity"] != ("error" if proc.returncode else "information"):
                 continue
+            # Pyright report lineno is 0-based, while
+            # python frame lineno is 1-based
             lineno = diag["range"]["start"]["line"] + 1
             filename = pathlib.Path(diag["file"]).name
+            if proc.returncode:
+                raise TypeCheckerError(diag["message"], filename, lineno)
             if (m := cls._type_mesg_re.match(diag["message"])) is None:
                 continue
             pos = FilePos(filename, lineno)

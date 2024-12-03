@@ -17,7 +17,9 @@ dependencies = [
     'mypy >= 1.11.2',
     'pyright ~= 1.1',
     'pytest >= 7.0',
-    'typeguard ~= 4.3'
+    'typeguard ~= 4.3',
+    # 'schema > 0.7.7',  # not yet released
+    'schema @ git+https://github.com/keleshev/schema.git@24a3045773eac497c659f24b32f24a281be9f286',
 ]
 keywords = [
     'pytest',
@@ -58,6 +60,9 @@ pytest-revealtype-injector = "pytest_revealtype_injector.plugin"
 
 [tool.flit.module]
 name = 'pytest_revealtype_injector'
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 path = 'src/pytest_revealtype_injector/__init__.py'

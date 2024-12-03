@@ -17,6 +17,7 @@ from typing import (
 
 import mypy.api
 import pytest
+import schema as s
 
 from ..models import (
     FilePos,
@@ -124,6 +125,19 @@ class _MypyAdapter(TypeCheckerAdapter):
     id = "mypy"
     typechecker_result = {}
     _type_mesg_re = re.compile(r'^Revealed type is "(?P<type>.+?)"$')
+    _schema = s.Schema({
+        "file": str,
+        "line": int,
+        "column": int,
+        "message": str,
+        "hint": s.Or(str, s.Schema(None)),
+        "code": str,
+        "severity": s.Or(
+            s.Schema("note"),
+            s.Schema("warning"),
+            s.Schema("error"),
+        ),
+    })
 
     @classmethod
     def run_typechecker_on(cls, paths: Iterable[pathlib.Path]) -> None:
@@ -148,8 +162,8 @@ class _MypyAdapter(TypeCheckerAdapter):
         # So-called mypy json output is merely a line-by-line
         # transformation of plain text output into json object
         for line in stdout.splitlines():
-            # TODO Mypy json schema validation
-            diag = cast(_MypyDiagObj, json.loads(line))
+            obj = json.loads(line)
+            diag = cast(_MypyDiagObj, cls._schema.validate(obj))
             filename = pathlib.Path(diag["file"]).name
             pos = FilePos(filename, diag["line"])
             if diag["severity"] != "note":

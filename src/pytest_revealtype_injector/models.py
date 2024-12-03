@@ -15,6 +15,7 @@ from typing import (
 )
 
 import pytest
+from schema import Schema
 
 
 class FilePos(NamedTuple):
@@ -91,6 +92,7 @@ class TypeCheckerAdapter:
     # {('file.py', 10): ('var_name', 'list[str]'), ...}
     typechecker_result: ClassVar[dict[FilePos, VarType]]
     _type_mesg_re: ClassVar[re.Pattern[str]]
+    _schema: ClassVar[Schema]
 
     @classmethod
     @abc.abstractmethod
