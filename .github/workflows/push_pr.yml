@@ -6,6 +6,7 @@ on:
       - '**.md'
       - '**.txt'
       - 'COPYING*'
+      - 'LICENSE*'
       - '.*'
       - '!.github/**'
     branches:
@@ -15,6 +16,7 @@ on:
       - '**.md'
       - '**.txt'
       - 'COPYING*'
+      - 'LICENSE*'
       - '.*'
       - '!.github/**'
 
