@@ -1,3 +1,8 @@
+![PyPI - Version](https://img.shields.io/pypi/v/pytest-revealtype-injector)
+![GitHub Release Date](https://img.shields.io/github/release-date/abelcheung/pytest-revealtype-injector)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fgithub.com%2Fabelcheung%2Fpytest-revealtype-injector%2Fraw%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/pytest-revealtype-injector)
+
 `pytest-revealtype-injector` is a `pytest` plugin for replacing [`reveal_type()`](https://docs.python.org/3/library/typing.html#typing.reveal_type) calls inside test functions as something more sophisticated. It does the following tasks in parallel:
 
 - Launch external static type checkers (`pyright` and `mypy`) and store `reveal_type` results.
