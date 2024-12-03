@@ -130,3 +130,7 @@ testpaths = [
 version_variables = ['src/pytest_revealtype_injector/__init__.py:__version__']
 major_on_zero = false  # switch on for 1.0.0
 
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    'Merge pull request #\d+ from',
+]
