@@ -1,0 +1,6 @@
+pytest-revealtype-injector is released under MIT license (see COPYING.mit).
+
+Original source code comes from part of types-lxml project, which is
+release under Apache-2.0 license. But as the sole author of all source
+code inside this repository, it is at my own discretion to follow pytest
+license because this project is taking shape as a pytest plugin.
