@@ -19,7 +19,7 @@ on:
       - '!.github/**'
 
 jobs:
-  checks:
+  typecheck:
     strategy:
       fail-fast: false
       matrix:
@@ -33,3 +33,16 @@ jobs:
       gitref: ${{ github.ref }}
       pyver: ${{ matrix.pyver }}
 
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        pyver:
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+    uses: ./.github/workflows/pytest_inc.yml
+    with:
+      gitref: ${{ github.ref }}
+      pyver: ${{ matrix.pyver }}
