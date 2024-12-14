@@ -16,7 +16,7 @@ on:
 
 jobs:
   check:
-    name: Type checking
+    name: Check
     runs-on: ${{ inputs.os }}
     steps:
     - uses: actions/checkout@v4
@@ -36,12 +36,12 @@ jobs:
         uv venv --python-preference only-managed
         uv pip install -r pyproject.toml
 
-    - name: Pyright check
+    - name: Run Pyright
       run: |
         source .venv/bin/activate
         pyright src/
 
-    - name: Mypy check
+    - name: Run Mypy
       if: success() || failure()
       run: |
         source .venv/bin/activate
