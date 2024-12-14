@@ -122,11 +122,11 @@ addopts = [
     "--tb=short",
     "--import-mode=importlib",
 ]
-markers = [
-    "slow: marks tests as slow",
-]
 testpaths = [
     "tests",
+]
+pythonpath = [
+    "src",
 ]
 
 # We only use version determination logic from python-semantic-release,
