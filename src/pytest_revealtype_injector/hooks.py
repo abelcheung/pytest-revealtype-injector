@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import inspect
-import logging
 
 import pytest
 
-from . import adapter
+from . import adapter, log
 from .main import revealtype_injector
 
-_logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
+_logger = log.get_logger()
 
 
 def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
@@ -65,6 +63,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    _logger.setLevel(config.get_verbosity(config.VERBOSITY_TEST_CASES))
     # Forget config stash, it can't store collection of unserialized objects
     for adp in adapter.discovery():
         if config.option.revealtype_disable_adapter == adp.id:

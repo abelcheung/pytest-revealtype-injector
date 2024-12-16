@@ -54,6 +54,31 @@ def test_something():
 
 2. `reveal_type()` calls have to stay in a single line, without anything else. This limitation comes from using [`eval` mode in AST parsing](https://docs.python.org/3/library/ast.html#ast.Expression).
 
+## Logging
+
+This plugin uses standard [`logging`](https://docs.python.org/3/library/logging.html) internally. `pytest -v` can be used to reveal `INFO` and `DEBUG` logs. Given following example:
+
+```python
+def test_superfluous(self) -> None:
+    x: list[str] = ['a', 'b', 'c', 1]  # type: ignore  # pyright: ignore
+    reveal_type(x)
+```
+
+Something like this will be shown as test result:
+
+```
+...
+    raise TypeCheckError(f"is not an instance of {qualified_name(origin_type)}")
+E   typeguard.TypeCheckError: item 3 is not an instance of str (from pyright)
+------------------------------------------------------------- Captured log call -------------------------------------------------------------
+INFO     revealtype-injector:hooks.py:26 Replaced reveal_type() from global import with <function revealtype_injector at 0x00000238DB923D00>
+DEBUG    revealtype-injector:main.py:60 Extraction OK: code='reveal_type(x)', result='x'
+========================================================== short test summary info ==========================================================
+FAILED tests/runtime/test_attrib.py::TestAttrib::test_superfluous - typeguard.TypeCheckError: item 3 is not an instance of str (from pyright)
+============================================================= 1 failed in 3.38s =============================================================
+```
+
+
 ## History
 
 This pytest plugin starts its life as part of testsuite related utilities within [`types-lxml`](https://github.com/abelcheung/types-lxml). As `lxml` is a `cython` project and probably never incorporate inline python annotation in future, there is need to compare runtime result to static type checker output for discrepancy. As time goes by, it starts to make sense to manage as an independent project.

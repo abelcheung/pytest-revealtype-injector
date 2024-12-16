@@ -1,6 +1,5 @@
 import ast
 import inspect
-import logging
 import pathlib
 import sys
 from typing import (
@@ -15,7 +14,7 @@ from typeguard import (
     check_type_internal,
 )
 
-from . import adapter
+from . import adapter, log
 from .models import (
     FilePos,
     TypeCheckerError,
@@ -24,8 +23,7 @@ from .models import (
 
 _T = TypeVar("_T")
 
-_logger = logging.getLogger(__name__)
-_logger.setLevel(logging.WARN)
+_logger = log.get_logger()
 
 
 class RevealTypeExtractor(ast.NodeVisitor):
@@ -42,8 +40,15 @@ class RevealTypeExtractor(ast.NodeVisitor):
 
 
 def _get_var_name(frame: inspect.Traceback) -> str | None:
+    filename = pathlib.Path(frame.filename)
+    if not filename.exists():
+        _logger.warning(
+            f"Stack frame points to file '{filename}' "
+            "which doesn't exist on local system."
+        )
     ctxt, idx = frame.code_context, frame.index
-    assert ctxt is not None and idx is not None
+    assert ctxt is not None
+    assert idx is not None
     code = ctxt[idx].strip()
 
     walker = RevealTypeExtractor()
@@ -51,7 +56,9 @@ def _get_var_name(frame: inspect.Traceback) -> str | None:
     # as much restriction on test code as 'eval' mode does.
     walker.visit(ast.parse(code, mode="eval"))
     assert walker.target is not None
-    return ast.get_source_segment(code, walker.target)
+    result = ast.get_source_segment(code, walker.target)
+    _logger.debug(f"Extraction OK: {code=}, {result=}")
+    return result
 
 
 def revealtype_injector(var: _T) -> _T:
@@ -134,7 +141,8 @@ def revealtype_injector(var: _T) -> _T:
         try:
             check_type_internal(var, ref, memo)
         except TypeCheckError as e:
-            e.args = (f"({adp.id}) " + e.args[0],) + e.args[1:]
+            # Only args[0] contains message
+            e.args = (e.args[0] + f" (from {adp.id})",) + e.args[1:]
             raise
 
     return var

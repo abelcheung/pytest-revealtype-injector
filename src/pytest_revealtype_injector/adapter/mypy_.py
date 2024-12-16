@@ -1,7 +1,6 @@
 import ast
 import importlib
 import json
-import logging
 import pathlib
 import re
 from collections.abc import (
@@ -19,6 +18,7 @@ import mypy.api
 import pytest
 import schema as s
 
+from ..log import get_logger
 from ..models import (
     FilePos,
     NameCollectorBase,
@@ -27,8 +27,7 @@ from ..models import (
     VarType,
 )
 
-_logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
+_logger = get_logger()
 
 
 class _MypyDiagObj(TypedDict):
@@ -68,7 +67,9 @@ class _NameCollector(NameCollectorBase):
         _ = self.visit(node.value)
 
         if resolved := getattr(self.collected[prefix], name, False):
-            self.collected[ast.unparse(node)] = resolved
+            code = ast.unparse(node)
+            self.collected[code] = resolved
+            _logger.debug(f"Mypy NameCollector resolved '{code}' as {resolved}")
             return node
 
         # For class defined in local scope, mypy just prepends test
@@ -101,10 +102,13 @@ class _NameCollector(NameCollectorBase):
             pass
         else:
             self.collected[name] = mod
+            _logger.debug(f"Mypy NameCollector resolved '{name}' as {mod}")
             return node
 
         if hasattr(self.collected["typing"], name):
-            self.collected[name] = getattr(self.collected["typing"], name)
+            obj = getattr(self.collected["typing"], name)
+            self.collected[name] = obj
+            _logger.debug(f"Mypy NameCollector resolved '{name}' as {obj}")
             return node
 
         raise NameError(f'Cannot resolve "{name}"')
@@ -210,7 +214,6 @@ class _MypyAdapter(TypeCheckerAdapter):
 
     @classmethod
     def set_config_file(cls, config: pytest.Config) -> None:
-        # Mypy doesn't have a default config file
         if (path_str := config.option.revealtype_mypy_config) is None:
             _logger.info("Using default mypy configuration")
             return

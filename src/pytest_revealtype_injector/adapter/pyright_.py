@@ -1,6 +1,5 @@
 import ast
 import json
-import logging
 import pathlib
 import re
 import shutil
@@ -19,6 +18,7 @@ from typing import (
 import pytest
 import schema as s
 
+from ..log import get_logger
 from ..models import (
     FilePos,
     NameCollectorBase,
@@ -27,8 +27,7 @@ from ..models import (
     VarType,
 )
 
-_logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
+_logger = get_logger()
 
 
 class _PyrightDiagPosition(TypedDict):
@@ -55,9 +54,12 @@ class _NameCollector(NameCollectorBase):
             eval(name, self._globalns, self._localns | self.collected)
         except NameError:
             for m in ("typing", "typing_extensions"):
-                if hasattr(self.collected[m], name):
-                    self.collected[name] = getattr(self.collected[m], name)
-                    return node
+                if not hasattr(self.collected[m], name):
+                    continue
+                obj = getattr(self.collected[m], name)
+                self.collected[name] = obj
+                _logger.debug(f"Pyright NameCollector resolved '{name}' as {obj}")
+                return node
             raise
         return node
 
