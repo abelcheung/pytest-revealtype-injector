@@ -139,3 +139,5 @@ exclude_commit_patterns = [
     '^Merge pull request #\d+ from',
     '^(build|ci|style)(\(.+?\))?: ',
 ]
+mode = "update"
+insertion_flag = "<!-- insertion placeholder -->"

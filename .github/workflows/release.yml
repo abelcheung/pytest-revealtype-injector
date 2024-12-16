@@ -35,6 +35,9 @@ jobs:
         ref: ${{ github.ref }}
         fetch-depth: 0
 
+    - name: Create dummy changelog
+      run: echo -e "\n<!-- insertion placeholder -->\n" > CHANGELOG.md
+
     - name: Forced version bump
       uses: python-semantic-release/python-semantic-release@v9.12.0
       if: inputs.is_forced == 'true'
