@@ -166,6 +166,8 @@ class _MypyAdapter(TypeCheckerAdapter):
         # So-called mypy json output is merely a line-by-line
         # transformation of plain text output into json object
         for line in stdout.splitlines():
+            if len(line) <= 2 or line[0] != "{":
+                continue
             obj = json.loads(line)
             diag = cast(_MypyDiagObj, cls._schema.validate(obj))
             filename = pathlib.Path(diag["file"]).name
