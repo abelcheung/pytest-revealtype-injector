@@ -1,8 +1,7 @@
 #:schema https://json.schemastore.org/pyproject.json
 
 [build-system]
-# replace with 'hatchling >= 1.27.0' when things are sorted out
-requires = ['hatchling @ git+https://github.com/pypa/hatch.git@72d57279ac8fa58b1981734b58d55cf607e84656#subdirectory=backend']
+requires = ['hatchling ~= 1.27']
 build-backend = 'hatchling.build'
 
 [project]
