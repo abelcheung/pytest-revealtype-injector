@@ -126,17 +126,15 @@ def revealtype_injector(var: _T) -> _T:
             adp.typechecker_result[pos] = VarType(var_name, tc_result.type)
 
         ref = tc_result.type
+        walker = adp.create_collector(globalns, localns)
         try:
-            _ = eval(ref.__forward_arg__, globalns, localns)
+            _ = eval(ref.__forward_arg__, globalns, localns | walker.collected)
         except (TypeError, NameError):
             ref_ast = ast.parse(ref.__forward_arg__, mode="eval")
-            walker = adp.create_collector(globalns, localns)
             new_ast = walker.visit(ref_ast)
             if walker.modified:
                 ref = ForwardRef(ast.unparse(new_ast))
-            memo = TypeCheckMemo(globalns, localns | walker.collected)
-        else:
-            memo = TypeCheckMemo(globalns, localns)
+        memo = TypeCheckMemo(globalns, localns | walker.collected)
 
         try:
             check_type_internal(var, ref, memo)

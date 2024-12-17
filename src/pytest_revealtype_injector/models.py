@@ -47,6 +47,12 @@ class TypeCheckerError(Exception):
 
 
 class NameCollectorBase(ast.NodeTransformer):
+    # typing_extensions guaranteed to be present,
+    # as a dependency of typeguard
+    collected: dict[str, Any] = {
+        m: importlib.import_module(m)
+        for m in ("builtins", "typing", "typing_extensions")
+    }
     def __init__(
         self,
         globalns: dict[str, Any],
@@ -56,12 +62,7 @@ class NameCollectorBase(ast.NodeTransformer):
         self._globalns = globalns
         self._localns = localns
         self.modified: bool = False
-        # typing_extensions guaranteed to be present,
-        # as a dependency of typeguard
-        self.collected: dict[str, Any] = {
-            m: importlib.import_module(m)
-            for m in ("builtins", "typing", "typing_extensions")
-        }
+        self.collected = type(self).collected.copy()
 
     def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
         node.value = cast("ast.expr", self.visit(node.value))

@@ -12,6 +12,7 @@ from typing import (
     ForwardRef,
     Literal,
     TypedDict,
+    TypeVar,
     cast,
 )
 
@@ -34,9 +35,11 @@ class _PyrightDiagPosition(TypedDict):
     line: int
     character: int
 
+
 class _PyrightDiagRange(TypedDict):
     start: _PyrightDiagPosition
     end: _PyrightDiagPosition
+
 
 class _PyrightDiagItem(TypedDict):
     file: str
@@ -46,6 +49,13 @@ class _PyrightDiagItem(TypedDict):
 
 
 class _NameCollector(NameCollectorBase):
+    # Pre-register common used bare names from typing
+    collected = NameCollectorBase.collected | {
+        k: v
+        for k, v in NameCollectorBase.collected["typing"].__dict__.items()
+        if k[0].isupper() and not isinstance(v, TypeVar)
+    }
+
     # Pyright inferred type results always contain bare names only,
     # so don't need to bother with visit_Attribute()
     def visit_Name(self, node: ast.Name) -> ast.Name:
