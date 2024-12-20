@@ -92,6 +92,7 @@ class _PyrightAdapter(TypeCheckerAdapter):
             "start": {"line": int, "character": int},
             "end": {"line": int, "character": int},
         },
+        s.Optional("rule"): str,
     })
 
     @classmethod
