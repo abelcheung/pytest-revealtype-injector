@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import importlib
 import json
@@ -7,7 +9,6 @@ from collections.abc import (
     Iterable,
 )
 from typing import (
-    Any,
     ForwardRef,
     Literal,
     TypedDict,
@@ -15,7 +16,6 @@ from typing import (
 )
 
 import mypy.api
-import pytest
 import schema as s
 
 from ..log import get_logger
@@ -40,7 +40,7 @@ class _MypyDiagObj(TypedDict):
     severity: Literal["note", "warning", "error"]
 
 
-class _NameCollector(NameCollectorBase):
+class NameCollector(NameCollectorBase):
     def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
         prefix = ast.unparse(node.value)
         name = node.attr
@@ -127,8 +127,9 @@ class _NameCollector(NameCollectorBase):
 
 class _MypyAdapter(TypeCheckerAdapter):
     id = "mypy"
-    typechecker_result = {}
-    _type_mesg_re = re.compile(r'^Revealed type is "(?P<type>.+?)"$')
+    _executable = ""  # unused, calls mypy.api.run() here
+    _type_mesg_re = re.compile(r'Revealed type is "(?P<type>.+?)"')
+    _namecollector_class = NameCollector
     _schema = s.Schema({
         "file": str,
         "line": int,
@@ -143,15 +144,15 @@ class _MypyAdapter(TypeCheckerAdapter):
         ),
     })
 
-    @classmethod
-    def run_typechecker_on(cls, paths: Iterable[pathlib.Path]) -> None:
+    def run_typechecker_on(self, paths: Iterable[pathlib.Path]) -> None:
         mypy_args = [
             "--output=json",
         ]
-        if cls.config_file is not None:
-            cfg_str = str(cls.config_file)
-            if cfg_str == ".":  # see set_config_file() below
-                cfg_str = ""
+        if self.config_file is not None:
+            if self.config_file == pathlib.Path():
+                cfg_str = ""  # see preprocess_config_file() below
+            else:
+                cfg_str = str(self.config_file)
             mypy_args.append(f"--config-file={cfg_str}")
 
         mypy_args.extend(str(p) for p in paths)
@@ -169,7 +170,7 @@ class _MypyAdapter(TypeCheckerAdapter):
             if len(line) <= 2 or line[0] != "{":
                 continue
             obj = json.loads(line)
-            diag = cast(_MypyDiagObj, cls._schema.validate(obj))
+            diag = cast(_MypyDiagObj, self._schema.validate(obj))
             filename = pathlib.Path(diag["file"]).name
             pos = FilePos(filename, diag["line"])
             if diag["severity"] != "note":
@@ -180,7 +181,7 @@ class _MypyAdapter(TypeCheckerAdapter):
                     diag["file"],
                     diag["line"],
                 )
-            if (m := cls._type_mesg_re.match(diag["message"])) is None:
+            if (m := self._type_mesg_re.fullmatch(diag["message"])) is None:
                 continue
             # Mypy can insert extra character into expression so that it
             # becomes invalid and unparsable. 0.9x days there
@@ -190,14 +191,14 @@ class _MypyAdapter(TypeCheckerAdapter):
             expression = m["type"].translate({ord(c): None for c in "*?="})
             try:
                 # Unlike pyright, mypy output doesn't contain variable name
-                cls.typechecker_result[pos] = VarType(None, ForwardRef(expression))
+                self.typechecker_result[pos] = VarType(None, ForwardRef(expression))
             except SyntaxError as e:
                 if (
                     m := re.fullmatch(r"<Deleted '(?P<var>.+)'>", expression)
                 ) is not None:
                     raise TypeCheckerError(
                         "{} does not support reusing deleted variable '{}'".format(
-                            cls.id, m["var"]
+                            self.id, m["var"]
                         ),
                         diag["file"],
                         diag["line"],
@@ -208,46 +209,15 @@ class _MypyAdapter(TypeCheckerAdapter):
                     diag["line"],
                 ) from e
 
-    @classmethod
-    def create_collector(
-        cls, globalns: dict[str, Any], localns: dict[str, Any]
-    ) -> _NameCollector:
-        return _NameCollector(globalns, localns)
-
-    @classmethod
-    def set_config_file(cls, config: pytest.Config) -> None:
-        if (path_str := config.option.revealtype_mypy_config) is None:
-            _logger.info("Using default mypy configuration")
-            return
-
+    def preprocess_config_file(self, path_str: str) -> bool:
+        if path_str:
+            return False
         # HACK: when path_str is empty string, use no config file
         # ('mypy --config-file=')
-        # Take advantage of pathlib.Path() behavior that empty string
-        # is treated as current directory, which is not a valid
-        # config file name, while satisfying typing constraint
-        if not path_str:
-            cls.config_file = pathlib.Path()
-            return
-
-        relpath = pathlib.Path(path_str)
-        if relpath.is_absolute():
-            raise ValueError(f"Path '{path_str}' must be relative to pytest rootdir")
-        result = (config.rootpath / relpath).resolve()
-        if not result.exists():
-            raise FileNotFoundError(f"Path '{result}' not found")
-
-        _logger.info(f"Using mypy configuration file at {result}")
-        cls.config_file = result
-
-    @staticmethod
-    def add_pytest_option(group: pytest.OptionGroup) -> None:
-        group.addoption(
-            "--revealtype-mypy-config",
-            type=str,
-            default=None,
-            help="Mypy configuration file, path is relative to pytest rootdir. "
-            "If unspecified, use mypy default behavior",
-        )
+        # The special value is for satisfying typing constraint;
+        # it will be treated specially in run_typechecker_on()
+        self.config_file = pathlib.Path()
+        return True
 
 
 adapter = _MypyAdapter()
