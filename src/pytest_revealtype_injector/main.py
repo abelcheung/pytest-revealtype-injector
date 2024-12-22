@@ -128,12 +128,26 @@ def revealtype_injector(var: _T) -> _T:
         ref = tc_result.type
         walker = adp.create_collector(globalns, localns)
         try:
-            _ = eval(ref.__forward_arg__, globalns, localns | walker.collected)
+            evaluated = eval(ref.__forward_arg__, globalns, localns | walker.collected)
         except (TypeError, NameError):
-            ref_ast = ast.parse(ref.__forward_arg__, mode="eval")
-            new_ast = walker.visit(ref_ast)
+            old_ast = ast.parse(ref.__forward_arg__, mode="eval")
+            new_ast = walker.visit(old_ast)
             if walker.modified:
                 ref = ForwardRef(ast.unparse(new_ast))
+            evaluated = eval(ref.__forward_arg__, globalns, localns | walker.collected)
+
+        # HACK Mainly serves as a guard against mypy's behavior of blanket
+        # inferring to Any when it can't determine the type under non-strict
+        # mode. This behavior causes typeguard to remain silent, since Any is
+        # compatible with everything. This has a side effect of disallowing
+        # use of reveal_type() on data truly of Any type.
+        if evaluated is Any:
+            raise TypeCheckerError(
+                f"Inferred type of '{var_name}' is Any, which "
+                "defeats the purpose of type checking",
+                pos.file,
+                pos.lineno,
+            )
         memo = TypeCheckMemo(globalns, localns | walker.collected)
 
         try:
