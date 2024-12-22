@@ -98,7 +98,7 @@ class TypeCheckerAdapter:
     _schema: ClassVar[Schema]
     _namecollector_class: ClassVar[type[NameCollectorBase]]
 
-    def __init__(self):
+    def __init__(self) -> None:
         # {('file.py', 10): ('var_name', 'list[str]'), ...}
         self.typechecker_result: dict[FilePos, VarType] = {}
         self._logger = get_logger()
