@@ -49,6 +49,7 @@ class _PyrightDiagItem(TypedDict):
 
 
 class NameCollector(NameCollectorBase):
+    type_checker = "pyright"
     # Pre-register common used bare names from typing
     collected = NameCollectorBase.collected | {
         k: v
@@ -68,13 +69,15 @@ class NameCollector(NameCollectorBase):
                     continue
                 obj = getattr(self.collected[m], name)
                 self.collected[name] = obj
-                _logger.debug(f"Pyright NameCollector resolved '{name}' as {obj}")
+                _logger.debug(
+                    f"{self.type_checker} NameCollector resolved '{name}' as {obj}"
+                )
                 return node
             raise
         return node
 
 
-class _PyrightAdapter(TypeCheckerAdapter):
+class PyrightAdapter(TypeCheckerAdapter):
     id = "pyright"
     _executable = "pyright"
     _type_mesg_re = re.compile('Type of "(?P<var>.+?)" is "(?P<type>.+?)"')
@@ -103,7 +106,7 @@ class _PyrightAdapter(TypeCheckerAdapter):
         elif shutil.which("npx") is not None:
             cmd.extend(["npx", self._executable])
         else:
-            raise FileNotFoundError("Pyright is required to run test suite")
+            raise FileNotFoundError(f"{self._executable} is required to run test suite")
 
         cmd.append("--outputjson")
         if self.config_file is not None:
@@ -131,4 +134,4 @@ class _PyrightAdapter(TypeCheckerAdapter):
             self.typechecker_result[pos] = VarType(m["var"], ForwardRef(m["type"]))
 
 
-adapter = _PyrightAdapter()
+adapter = PyrightAdapter()

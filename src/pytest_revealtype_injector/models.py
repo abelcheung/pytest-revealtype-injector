@@ -50,6 +50,7 @@ class TypeCheckerError(Exception):
 
 
 class NameCollectorBase(ast.NodeTransformer):
+    type_checker: ClassVar[str]
     # typing_extensions guaranteed to be present,
     # as a dependency of typeguard
     collected: dict[str, Any] = {
@@ -128,7 +129,7 @@ class TypeCheckerAdapter:
         assert not isinstance(path_str, Notset)
 
         if path_str is None:
-            self._logger.info("Using default pyright configuration")
+            self._logger.info(f"Using default {self.id} configuration")
             return
 
         if self.preprocess_config_file(path_str):
@@ -141,7 +142,7 @@ class TypeCheckerAdapter:
         if not result.exists():
             raise FileNotFoundError(f"Path '{result}' not found")
 
-        self._logger.info(f"Using pyright configuration file at {result}")
+        self._logger.info(f"Using {self.id} configuration file at {result}")
         self.config_file = result
 
     def add_pytest_option(self, group: pytest.OptionGroup) -> None:
@@ -149,6 +150,7 @@ class TypeCheckerAdapter:
             self.longopt_config,
             type=str,
             default=None,
+            metavar="RELATIVE_PATH",
             help=f"{self.id} configuration file, path is relative to pytest "
             f"rootdir. If unspecified, use {self.id} default behavior",
         )

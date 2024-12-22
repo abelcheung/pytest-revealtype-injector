@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import cast
 
 import pytest
 
@@ -55,8 +56,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--revealtype-disable-adapter",
         type=str,
         choices=choices,
-        default=None,
-        help="Disable this type checker when using revealtype-injector plugin",
+        action="append",
+        default=[],
+        help="Disable specific type checker. Can be used multiple times"
+        " to disable multiple checkers",
     )
     for adp in adapters:
         adp.add_pytest_option(group)
@@ -65,8 +68,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_configure(config: pytest.Config) -> None:
     _logger.setLevel(config.get_verbosity(config.VERBOSITY_TEST_CASES))
     # Forget config stash, it can't store collection of unserialized objects
+    to_be_disabled = cast(list[str], config.getoption("revealtype_disable_adapter"))
     for adp in adapter.discovery():
-        if config.option.revealtype_disable_adapter == adp.id:
+        if adp.id in to_be_disabled:
             adp.enabled = False
             _logger.info(f"Disable {adp.id} adapter based on command line option")
         else:

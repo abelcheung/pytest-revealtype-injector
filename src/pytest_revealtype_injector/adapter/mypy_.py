@@ -41,6 +41,8 @@ class _MypyDiagObj(TypedDict):
 
 
 class NameCollector(NameCollectorBase):
+    type_checker = "mypy"
+
     def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
         prefix = ast.unparse(node.value)
         name = node.attr
@@ -69,7 +71,9 @@ class NameCollector(NameCollectorBase):
         if resolved := getattr(self.collected[prefix], name, False):
             code = ast.unparse(node)
             self.collected[code] = resolved
-            _logger.debug(f"Mypy NameCollector resolved '{code}' as {resolved}")
+            _logger.debug(
+                f"{self.type_checker} NameCollector resolved '{code}' as {resolved}"
+            )
             return node
 
         # For class defined in local scope, mypy just prepends test
@@ -102,13 +106,17 @@ class NameCollector(NameCollectorBase):
             pass
         else:
             self.collected[name] = mod
-            _logger.debug(f"Mypy NameCollector resolved '{name}' as {mod}")
+            _logger.debug(
+                f"{self.type_checker} NameCollector resolved '{name}' as {mod}"
+            )
             return node
 
         if hasattr(self.collected["typing"], name):
             obj = getattr(self.collected["typing"], name)
             self.collected[name] = obj
-            _logger.debug(f"Mypy NameCollector resolved '{name}' as {obj}")
+            _logger.debug(
+                f"{self.type_checker} NameCollector resolved '{name}' as {obj}"
+            )
             return node
 
         raise NameError(f'Cannot resolve "{name}"')
@@ -118,14 +126,13 @@ class NameCollector(NameCollectorBase):
     # Return only the left operand after processing.
     def visit_BinOp(self, node: ast.BinOp) -> ast.expr:
         if isinstance(node.op, ast.MatMult) and isinstance(node.right, ast.Constant):
-            # Mypy disallows returning Any
             return cast("ast.expr", self.visit(node.left))
         # For expression that haven't been accounted for, just don't
         # process and allow name resolution to fail
         return node
 
 
-class _MypyAdapter(TypeCheckerAdapter):
+class MypyAdapter(TypeCheckerAdapter):
     id = "mypy"
     _executable = ""  # unused, calls mypy.api.run() here
     _type_mesg_re = re.compile(r'Revealed type is "(?P<type>.+?)"')
@@ -220,4 +227,4 @@ class _MypyAdapter(TypeCheckerAdapter):
         return True
 
 
-adapter = _MypyAdapter()
+adapter = MypyAdapter()

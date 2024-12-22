@@ -16,9 +16,10 @@ license = 'MIT'
 license-files = ['COPYING*']
 dependencies = [
     'mypy >= 1.11.2',
-    'pyright ~= 1.1',
-    'pytest >= 7.0',
-    'typeguard ~= 4.3',
+    'pyright >= 1.1',
+    'basedpyright >= 1.0',
+    'pytest >=7.0,<9',
+    'typeguard >= 4.3',
     # schema with annotation support is still unreleased
     'schema == 0.7.7',
 ]
@@ -57,9 +58,6 @@ homepage = 'https://github.com/abelcheung/pytest-revealtype-injector'
 
 [project.entry-points.pytest11]
 pytest-revealtype-injector = "pytest_revealtype_injector.plugin"
-
-[tool.flit.module]
-name = 'pytest_revealtype_injector'
 
 [tool.hatch.version]
 path = 'src/pytest_revealtype_injector/__init__.py'
