@@ -6,6 +6,12 @@ import pytest
 class TestImport:
     def test_basic(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
+        pytester.makepyprojecttoml(
+            """
+            [tool.basedpyright]
+            reportUnreachable = false
+            """
+        )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             """
             import sys
@@ -33,6 +39,13 @@ class TestImport:
 
     def test_import_as(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
+        pytester.makepyprojecttoml(
+            """
+            [tool.basedpyright]
+            reportUnreachable = false
+            reportUnusedCallResult = false
+            """
+        )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             """
             import sys
@@ -54,12 +67,19 @@ class TestImport:
                     rt(x)
             """
         )
-        result = pytester.runpytest()
+        result = pytester.runpytest("--tb=short", "-v")
         result.assert_outcomes(passed=2)
 
 
     def test_import_module_as(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
+        pytester.makepyprojecttoml(
+            """
+            [tool.basedpyright]
+            reportUnreachable = false
+            reportUnusedCallResult = false
+            """
+        )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             """
             import sys
@@ -81,5 +101,5 @@ class TestImport:
                     t.reveal_type(x)
             """
         )
-        result = pytester.runpytest()
+        result = pytester.runpytest("--tb=short", "-v")
         result.assert_outcomes(passed=2)
