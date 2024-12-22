@@ -15,7 +15,10 @@ from typing import (
 )
 
 import pytest
+from _pytest.config import Notset
 from schema import Schema
+
+from .log import get_logger
 
 
 class FilePos(NamedTuple):
@@ -47,12 +50,14 @@ class TypeCheckerError(Exception):
 
 
 class NameCollectorBase(ast.NodeTransformer):
+    type_checker: ClassVar[str]
     # typing_extensions guaranteed to be present,
     # as a dependency of typeguard
     collected: dict[str, Any] = {
         m: importlib.import_module(m)
         for m in ("builtins", "typing", "typing_extensions")
     }
+
     def __init__(
         self,
         globalns: dict[str, Any],
@@ -86,26 +91,66 @@ class NameCollectorBase(ast.NodeTransformer):
 
 
 class TypeCheckerAdapter:
-    enabled: bool = True
-    config_file: ClassVar[pathlib.Path | None] = None
     # Subclasses need to specify default values for below
     id: ClassVar[str]
-    # {('file.py', 10): ('var_name', 'list[str]'), ...}
-    typechecker_result: ClassVar[dict[FilePos, VarType]]
+    _executable: ClassVar[str]
     _type_mesg_re: ClassVar[re.Pattern[str]]
     _schema: ClassVar[Schema]
+    _namecollector_class: ClassVar[type[NameCollectorBase]]
 
-    @classmethod
+    def __init__(self):
+        # {('file.py', 10): ('var_name', 'list[str]'), ...}
+        self.typechecker_result: dict[FilePos, VarType] = {}
+        self._logger = get_logger()
+        self.enabled: bool = True
+        self.config_file: pathlib.Path | None = None
+
+    # @classmethod + @property is impossible since Python 3.13
+    @property
+    def longopt_config(self) -> str:
+        return f"--revealtype-{self.id}-config"
+
     @abc.abstractmethod
-    def run_typechecker_on(cls, paths: Iterable[pathlib.Path]) -> None: ...
-    @classmethod
-    @abc.abstractmethod
+    def run_typechecker_on(self, paths: Iterable[pathlib.Path]) -> None: ...
+
     def create_collector(
-        cls, globalns: dict[str, Any], localns: dict[str, Any]
-    ) -> NameCollectorBase: ...
-    @classmethod
-    @abc.abstractmethod
-    def set_config_file(cls, config: pytest.Config) -> None: ...
-    @staticmethod
-    @abc.abstractmethod
-    def add_pytest_option(group: pytest.OptionGroup) -> None: ...
+        self, globalns: dict[str, Any], localns: dict[str, Any]
+    ) -> NameCollectorBase:
+        return self._namecollector_class(globalns, localns)
+
+    def preprocess_config_file(self, path_str: str) -> bool:
+        """Optional preprocessing of configuration file"""
+        return False
+
+    def set_config_file(self, config: pytest.Config) -> None:
+        path_str = config.getoption(self.longopt_config)
+        # pytest addoption() should have set default value
+        # to None even when option is not specified
+        assert not isinstance(path_str, Notset)
+
+        if path_str is None:
+            self._logger.info(f"Using default {self.id} configuration")
+            return
+
+        if self.preprocess_config_file(path_str):
+            return
+
+        relpath = pathlib.Path(path_str)
+        if relpath.is_absolute():
+            raise ValueError(f"Path '{path_str}' must be relative to pytest rootdir")
+        result = (config.rootpath / relpath).resolve()
+        if not result.exists():
+            raise FileNotFoundError(f"Path '{result}' not found")
+
+        self._logger.info(f"Using {self.id} configuration file at {result}")
+        self.config_file = result
+
+    def add_pytest_option(self, group: pytest.OptionGroup) -> None:
+        group.addoption(
+            self.longopt_config,
+            type=str,
+            default=None,
+            metavar="RELATIVE_PATH",
+            help=f"{self.id} configuration file, path is relative to pytest "
+            f"rootdir. If unspecified, use {self.id} default behavior",
+        )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import json
 import pathlib
@@ -8,7 +10,6 @@ from collections.abc import (
     Iterable,
 )
 from typing import (
-    Any,
     ForwardRef,
     Literal,
     TypedDict,
@@ -16,7 +17,6 @@ from typing import (
     cast,
 )
 
-import pytest
 import schema as s
 
 from ..log import get_logger
@@ -48,7 +48,8 @@ class _PyrightDiagItem(TypedDict):
     range: _PyrightDiagRange
 
 
-class _NameCollector(NameCollectorBase):
+class NameCollector(NameCollectorBase):
+    type_checker = "pyright"
     # Pre-register common used bare names from typing
     collected = NameCollectorBase.collected | {
         k: v
@@ -68,18 +69,21 @@ class _NameCollector(NameCollectorBase):
                     continue
                 obj = getattr(self.collected[m], name)
                 self.collected[name] = obj
-                _logger.debug(f"Pyright NameCollector resolved '{name}' as {obj}")
+                _logger.debug(
+                    f"{self.type_checker} NameCollector resolved '{name}' as {obj}"
+                )
                 return node
             raise
         return node
 
 
-class _PyrightAdapter(TypeCheckerAdapter):
+class PyrightAdapter(TypeCheckerAdapter):
     id = "pyright"
-    typechecker_result = {}
-    _type_mesg_re = re.compile('^Type of "(?P<var>.+?)" is "(?P<type>.+?)"$')
-    # We only care about diagnostic messages that contain type information.
-    # Metadata not specified here.
+    _executable = "pyright"
+    _type_mesg_re = re.compile('Type of "(?P<var>.+?)" is "(?P<type>.+?)"')
+    _namecollector_class = NameCollector
+    # We only care about diagnostic messages that contain type information, that
+    # is, items under "generalDiagnostics" key. Metadata not validated here.
     _schema = s.Schema({
         "file": str,
         "severity": s.Or(
@@ -92,22 +96,21 @@ class _PyrightAdapter(TypeCheckerAdapter):
             "start": {"line": int, "character": int},
             "end": {"line": int, "character": int},
         },
-        s.Optional("code"): str,
+        s.Optional("rule"): str,
     })
 
-    @classmethod
-    def run_typechecker_on(cls, paths: Iterable[pathlib.Path]) -> None:
+    def run_typechecker_on(self, paths: Iterable[pathlib.Path]) -> None:
         cmd: list[str] = []
-        if shutil.which("pyright") is not None:
-            cmd.append("pyright")
+        if shutil.which(self._executable) is not None:
+            cmd.append(self._executable)
         elif shutil.which("npx") is not None:
-            cmd.extend(["npx", "pyright"])
+            cmd.extend(["npx", self._executable])
         else:
-            raise FileNotFoundError("Pyright is required to run test suite")
+            raise FileNotFoundError(f"{self._executable} is required to run test suite")
 
         cmd.append("--outputjson")
-        if cls.config_file is not None:
-            cmd.extend(["--project", str(cls.config_file)])
+        if self.config_file is not None:
+            cmd.extend(["--project", str(self.config_file)])
         cmd.extend(str(p) for p in paths)
 
         proc = subprocess.run(cmd, capture_output=True)
@@ -116,7 +119,7 @@ class _PyrightAdapter(TypeCheckerAdapter):
 
         report = json.loads(proc.stdout)
         for item in report["generalDiagnostics"]:
-            diag = cast(_PyrightDiagItem, cls._schema.validate(item))
+            diag = cast(_PyrightDiagItem, self._schema.validate(item))
             if diag["severity"] != ("error" if proc.returncode else "information"):
                 continue
             # Pyright report lineno is 0-based, while
@@ -125,42 +128,10 @@ class _PyrightAdapter(TypeCheckerAdapter):
             filename = pathlib.Path(diag["file"]).name
             if proc.returncode:
                 raise TypeCheckerError(diag["message"], filename, lineno)
-            if (m := cls._type_mesg_re.match(diag["message"])) is None:
+            if (m := self._type_mesg_re.fullmatch(diag["message"])) is None:
                 continue
             pos = FilePos(filename, lineno)
-            cls.typechecker_result[pos] = VarType(m["var"], ForwardRef(m["type"]))
-
-    @classmethod
-    def create_collector(
-        cls, globalns: dict[str, Any], localns: dict[str, Any]
-    ) -> _NameCollector:
-        return _NameCollector(globalns, localns)
-
-    @classmethod
-    def set_config_file(cls, config: pytest.Config) -> None:
-        if (path_str := config.option.revealtype_pyright_config) is None:
-            _logger.info("Using default pyright configuration")
-            return
-
-        relpath = pathlib.Path(path_str)
-        if relpath.is_absolute():
-            raise ValueError(f"Path '{path_str}' must be relative to pytest rootdir")
-        result = (config.rootpath / relpath).resolve()
-        if not result.exists():
-            raise FileNotFoundError(f"Path '{result}' not found")
-
-        _logger.info(f"Using pyright configuration file at {result}")
-        cls.config_file = result
-
-    @staticmethod
-    def add_pytest_option(group: pytest.OptionGroup) -> None:
-        group.addoption(
-            "--revealtype-pyright-config",
-            type=str,
-            default=None,
-            help="Pyright configuration file, path is relative to pytest rootdir. "
-            "If unspecified, use pyright default behavior",
-        )
+            self.typechecker_result[pos] = VarType(m["var"], ForwardRef(m["type"]))
 
 
-adapter = _PyrightAdapter()
+adapter = PyrightAdapter()
