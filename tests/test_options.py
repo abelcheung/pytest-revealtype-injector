@@ -23,6 +23,7 @@ class TestDisableTypeChecker:
                 reveal_type(x)
         """
     )
+
     def _gen_pytest_opts(self, adapter: list[str]) -> list[str]:
         result = [f"--revealtype-disable-adapter={a}" for a in adapter]
         result.extend(["--tb=short", "-v"])

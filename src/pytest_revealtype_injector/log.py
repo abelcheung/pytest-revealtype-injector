@@ -11,6 +11,7 @@ _verbosity_map = {
     2: logging.DEBUG,
 }
 
+
 def get_logger() -> logging.Logger:
     return _logger
 
