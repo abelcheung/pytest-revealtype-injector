@@ -102,6 +102,9 @@ class TypeCheckerAdapter:
         # {('file.py', 10): ('var_name', 'list[str]'), ...}
         self.typechecker_result: dict[FilePos, VarType] = {}
         self._logger = get_logger()
+        # logger level is already set by pytest_configure()
+        # this only affects how much debug message is shown
+        self.log_verbosity: int = 1
         self.enabled: bool = True
         self.config_file: pathlib.Path | None = None
 
@@ -129,7 +132,7 @@ class TypeCheckerAdapter:
         assert not isinstance(path_str, Notset)
 
         if path_str is None:
-            self._logger.info(f"Using default {self.id} configuration")
+            self._logger.info(f"({self.id}) Using default configuration")
             return
 
         if self.preprocess_config_file(path_str):
@@ -142,7 +145,7 @@ class TypeCheckerAdapter:
         if not result.exists():
             raise FileNotFoundError(f"Path '{result}' not found")
 
-        self._logger.info(f"Using {self.id} configuration file at {result}")
+        self._logger.info(f"({self.id}) Using config file at {result}")
         self.config_file = result
 
     def add_pytest_option(self, group: pytest.OptionGroup) -> None:

@@ -66,12 +66,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    _logger.setLevel(config.get_verbosity(config.VERBOSITY_TEST_CASES))
+    verbosity = config.get_verbosity(config.VERBOSITY_TEST_CASES)
+    log.set_verbosity(verbosity)
     # Forget config stash, it can't store collection of unserialized objects
     to_be_disabled = cast(list[str], config.getoption("revealtype_disable_adapter"))
     for adp in adapter.discovery():
+        adp.log_verbosity = verbosity
         if adp.id in to_be_disabled:
             adp.enabled = False
-            _logger.info(f"Disable {adp.id} adapter based on command line option")
+            _logger.info(f"({adp.id}) this adapter disabled with command line option")
         else:
             adp.set_config_file(config)

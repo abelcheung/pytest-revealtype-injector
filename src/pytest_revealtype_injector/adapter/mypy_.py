@@ -164,6 +164,7 @@ class MypyAdapter(TypeCheckerAdapter):
 
         mypy_args.extend(str(p) for p in paths)
 
+        _logger.debug(f"({self.id}) api.run(): {mypy_args}")
         stdout, stderr, returncode = mypy.api.run(mypy_args)
 
         # fatal error, before evaluation happens
@@ -171,15 +172,31 @@ class MypyAdapter(TypeCheckerAdapter):
         if stderr:
             raise TypeCheckerError(stderr, None, None)
 
+        lines = stdout.splitlines()
+        _logger.info(
+            "({}) Return code = {}, diagnostic count = {}.{}".format(
+                self.id,
+                returncode,
+                len(lines),
+                " pytest -vv shows all items." if self.log_verbosity < 2 else "",
+            )
+        )
+
         # So-called mypy json output is merely a line-by-line
         # transformation of plain text output into json object
-        for line in stdout.splitlines():
+        for line in lines:
             if len(line) <= 2 or line[0] != "{":
                 continue
+            if self.log_verbosity >= 2:
+                _logger.debug(f"({self.id}) {line}")
             obj = json.loads(line)
             diag = cast(_MypyDiagObj, self._schema.validate(obj))
             filename = pathlib.Path(diag["file"]).name
             pos = FilePos(filename, diag["line"])
+            # HACK: Never trust return code from mypy. During early 1.11.x
+            # versions, mypy always return 1 for JSON output even when
+            # there's no error. Later on mypy command line has fixed this,
+            # but not mypy.api.run(), as of 1.13.
             if diag["severity"] != "note":
                 raise TypeCheckerError(
                     "Mypy {} with exit code {}: {}".format(
@@ -224,6 +241,7 @@ class MypyAdapter(TypeCheckerAdapter):
         # The special value is for satisfying typing constraint;
         # it will be treated specially in run_typechecker_on()
         self.config_file = pathlib.Path()
+        self._logger.info(f"({self.id}) Config file usage forbidden")
         return True
 
 

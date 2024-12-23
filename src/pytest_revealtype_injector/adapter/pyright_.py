@@ -113,13 +113,25 @@ class PyrightAdapter(TypeCheckerAdapter):
             cmd.extend(["--project", str(self.config_file)])
         cmd.extend(str(p) for p in paths)
 
+        _logger.debug(f"({self.id}) Run command: {cmd}")
         proc = subprocess.run(cmd, capture_output=True)
         if len(proc.stderr):
             raise TypeCheckerError(proc.stderr.decode(), None, None)
 
         report = json.loads(proc.stdout)
+        _logger.info(
+            "({}) Return code = {}, diagnostic count = {}.{}".format(
+                self.id,
+                proc.returncode,
+                len(report['generalDiagnostics']),
+                " pytest -vv shows all items." if self.log_verbosity < 2 else "",
+            )
+        )
+
         for item in report["generalDiagnostics"]:
             diag = cast(_PyrightDiagItem, self._schema.validate(item))
+            if self.log_verbosity >= 2:
+                _logger.debug(f"({self.id}) {diag}")
             if diag["severity"] != ("error" if proc.returncode else "information"):
                 continue
             # Pyright report lineno is 0-based, while
