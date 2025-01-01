@@ -23,7 +23,7 @@ jobs:
       with:
         ref: ${{ inputs.gitref }}
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
       with:
         version: "0.5.5"
         python-version: ${{ inputs.pyver }}
