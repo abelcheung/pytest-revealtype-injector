@@ -123,7 +123,7 @@ class PyrightAdapter(TypeCheckerAdapter):
             "({}) Return code = {}, diagnostic count = {}.{}".format(
                 self.id,
                 proc.returncode,
-                len(report['generalDiagnostics']),
+                len(report["generalDiagnostics"]),
                 " pytest -vv shows all items." if self.log_verbosity < 2 else "",
             )
         )
