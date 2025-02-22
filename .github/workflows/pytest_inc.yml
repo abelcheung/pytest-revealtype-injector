@@ -56,5 +56,5 @@ jobs:
 
     - name: Pytest - option tests (3)
       run: |
-        source .venjson/bin/activate
+        source .venv/bin/activate
         pytest tests/test_options.py::TestDisableTypeChecker::test_enable_mypy_only
