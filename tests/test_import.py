@@ -36,7 +36,6 @@ class TestImport:
         result = pytester.runpytest("--tb=short", "-v")
         result.assert_outcomes(passed=2)
 
-
     def test_import_as(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(
@@ -69,7 +68,6 @@ class TestImport:
         )
         result = pytester.runpytest("--tb=short", "-v")
         result.assert_outcomes(passed=2)
-
 
     def test_import_module_as(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
