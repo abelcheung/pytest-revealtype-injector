@@ -146,4 +146,5 @@ class PyrightAdapter(TypeCheckerAdapter):
             self.typechecker_result[pos] = VarType(m["var"], ForwardRef(m["type"]))
 
 
-adapter = PyrightAdapter()
+def generate_adapter() -> TypeCheckerAdapter:
+    return PyrightAdapter()

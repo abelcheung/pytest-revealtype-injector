@@ -108,10 +108,9 @@ class TypeCheckerAdapter:
         self.enabled: bool = True
         self.config_file: pathlib.Path | None = None
 
-    # @classmethod + @property is impossible since Python 3.13
-    @property
-    def longopt_config(self) -> str:
-        return f"--revealtype-{self.id}-config"
+    @classmethod
+    def longopt_for_config(cls) -> str:
+        return f"--revealtype-{cls.id}-config"
 
     @abc.abstractmethod
     def run_typechecker_on(self, paths: Iterable[pathlib.Path]) -> None: ...
@@ -126,7 +125,7 @@ class TypeCheckerAdapter:
         return False
 
     def set_config_file(self, config: pytest.Config) -> None:
-        path_str = config.getoption(self.longopt_config)
+        path_str = config.getoption(self.longopt_for_config())
         # pytest addoption() should have set default value
         # to None even when option is not specified
         assert not isinstance(path_str, Notset)
@@ -148,12 +147,13 @@ class TypeCheckerAdapter:
         self._logger.info(f"({self.id}) Using config file at {result}")
         self.config_file = result
 
-    def add_pytest_option(self, group: pytest.OptionGroup) -> None:
+    @classmethod
+    def add_pytest_option(cls, group: pytest.OptionGroup) -> None:
         group.addoption(
-            self.longopt_config,
+            cls.longopt_for_config(),
             type=str,
             default=None,
             metavar="RELATIVE_PATH",
-            help=f"{self.id} configuration file, path is relative to pytest "
-            f"rootdir. If unspecified, use {self.id} default behavior",
+            help=f"{cls.id} configuration file, path is relative to pytest "
+            f"rootdir. If unspecified, use {cls.id} default behavior",
         )

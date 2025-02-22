@@ -245,4 +245,5 @@ class MypyAdapter(TypeCheckerAdapter):
         return True
 
 
-adapter = MypyAdapter()
+def generate_adapter() -> TypeCheckerAdapter:
+    return MypyAdapter()

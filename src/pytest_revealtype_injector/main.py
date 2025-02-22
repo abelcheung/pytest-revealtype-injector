@@ -14,15 +14,15 @@ from typeguard import (
     check_type_internal,
 )
 
-from . import adapter, log
+from . import log
 from .models import (
     FilePos,
+    TypeCheckerAdapter,
     TypeCheckerError,
     VarType,
 )
 
 _T = TypeVar("_T")
-
 _logger = log.get_logger()
 
 
@@ -61,7 +61,7 @@ def _get_var_name(frame: inspect.Traceback) -> str | None:
     return result
 
 
-def revealtype_injector(var: _T) -> _T:
+def revealtype_injector(var: _T, adapters: set[TypeCheckerAdapter]) -> _T:
     """Replacement of `reveal_type()` that matches static and runtime type
     checking result
 
@@ -105,9 +105,7 @@ def revealtype_injector(var: _T) -> _T:
     globalns = caller_frame.f_globals
     localns = caller_frame.f_locals
 
-    for adp in adapter.discovery():
-        if not adp.enabled:
-            continue
+    for adp in adapters:
         try:
             tc_result = adp.typechecker_result[pos]
         except KeyError as e:

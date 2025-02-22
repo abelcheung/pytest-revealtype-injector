@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..log import get_logger
+from ..models import TypeCheckerAdapter
 from . import pyright_
 
 _logger = get_logger()
@@ -16,4 +17,5 @@ class BasedPyrightAdapter(pyright_.PyrightAdapter):
     _namecollector_class = NameCollector
 
 
-adapter = BasedPyrightAdapter()
+def generate_adapter() -> TypeCheckerAdapter:
+    return BasedPyrightAdapter()
