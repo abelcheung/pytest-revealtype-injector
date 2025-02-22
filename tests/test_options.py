@@ -26,16 +26,18 @@ class TestDisableTypeChecker:
 
     def _gen_pytest_opts(self, adapter: list[str]) -> list[str]:
         result = [f"--revealtype-disable-adapter={a}" for a in adapter]
-        result.extend(["--tb=short", "-v"])
+        result.extend(["--tb=short", "-vv"])
         return result
 
-    def test_disable_mypy(self, pytester: pytest.Pytester) -> None:
+    def test_disable_mypy_fail(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(
             """
             [tool.pyright]
             typeCheckingMode = 'strict'
             enableTypeIgnoreComments = false
+            reportUnreachable = false
+            reportUnusedCallResult = false
             """
         )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
@@ -46,12 +48,24 @@ class TestDisableTypeChecker:
         assert result.ret == pytest.ExitCode.INTERNAL_ERROR
         result.assert_outcomes(passed=0, failed=0)
 
+    def test_disable_mypy_pass(self, pytester: pytest.Pytester) -> None:
+        pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
+        pytester.makepyprojecttoml(
+            """
+            [tool.pyright]
+            typeCheckingMode = 'strict'
+            enableTypeIgnoreComments = false
+            reportUnreachable = false
+            reportUnusedCallResult = false
+            """
+        )
         content_masked = self.content_fail.format(
             "pyright: ignore[reportAssignmentType]",
         )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             content_masked
         )
+        opts = self._gen_pytest_opts(["mypy"])
         result = pytester.runpytest(*opts)
         assert result.ret == pytest.ExitCode.OK
         result.assert_outcomes(passed=1, failed=0)
@@ -68,7 +82,6 @@ class TestDisableTypeChecker:
             self.content_fail
         )
         opts = self._gen_pytest_opts(["basedpyright", "pyright"])
-        opts.append("--revealtype-mypy-config=")
         result = pytester.runpytest(*opts)
         assert result.ret == pytest.ExitCode.INTERNAL_ERROR
         result.assert_outcomes(passed=0, failed=0)
