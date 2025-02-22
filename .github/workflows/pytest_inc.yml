@@ -36,7 +36,25 @@ jobs:
         uv venv --python-preference only-managed
         uv pip install -r pyproject.toml
 
-    - name: Run Pytest
+    # FIXME: Tests with different pytest options can't
+    # be run together in the same pytest run.
+
+    - name: Pytest - import tests
       run: |
         source .venv/bin/activate
-        pytest
+        pytest tests/test_import.py
+
+    - name: Pytest - option tests (1)
+      run: |
+        source .venv/bin/activate
+        pytest tests/test_options.py::TestDisableTypeChecker::test_disable_mypy_fail
+
+    - name: Pytest - option tests (2)
+      run: |
+        source .venv/bin/activate
+        pytest tests/test_options.py::TestDisableTypeChecker::test_disable_mypy_pass
+
+    - name: Pytest - option tests (3)
+      run: |
+        source .venjson/bin/activate
+        pytest tests/test_options.py::TestDisableTypeChecker::test_enable_mypy_only
