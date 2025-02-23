@@ -41,6 +41,12 @@ jobs:
         source .venv/bin/activate
         pyright src/
 
+    - name: Run Basedpyright
+      if: success() || failure()
+      run: |
+        source .venv/bin/activate
+        basedpyright src/
+
     - name: Run Mypy
       if: success() || failure()
       run: |
