@@ -13,6 +13,7 @@ def generate() -> set[TypeCheckerAdapter]:
         mypy_.generate_adapter(),
     }
 
+
 def get_adapter_classes() -> list[type[TypeCheckerAdapter]]:
     return [
         basedpyright_.BasedPyrightAdapter,

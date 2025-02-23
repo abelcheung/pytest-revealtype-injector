@@ -30,9 +30,7 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
                 "typing_extensions",
             }:
                 setattr(pyfuncitem.module, name, injected)
-                _logger.info(
-                    f"Replaced {name}() from global import with {injected}"
-                )
+                _logger.info(f"Replaced {name}() from global import with {injected}")
                 continue
 
         if inspect.ismodule(item):
