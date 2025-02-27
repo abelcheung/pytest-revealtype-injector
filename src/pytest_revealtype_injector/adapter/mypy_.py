@@ -143,7 +143,7 @@ class MypyAdapter(TypeCheckerAdapter):
         "column": int,
         "message": str,
         "hint": s.Or(str, s.Schema(None)),
-        "code": str,
+        "code": s.Or(str, s.Schema(None)),
         "severity": s.Or(
             s.Schema("note"),
             s.Schema("warning"),
