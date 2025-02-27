@@ -33,16 +33,24 @@ class VarType(NamedTuple):
 
 class TypeCheckerError(Exception):
     # Can be None when type checker dies before any code evaluation
-    def __init__(self, message: str, filename: str | None, lineno: int | None) -> None:
+    def __init__(
+        self,
+        message: str,
+        filename: str | None,
+        lineno: int | None,
+        rule: str | None = None,
+    ) -> None:
         super().__init__(message)
         self._filename = filename
         self._lineno = lineno
+        self._rule = rule
 
     def __str__(self) -> str:
         if self._filename:
-            return '"{}"{}: {}'.format(
+            return '"{}"{}{}: {}'.format(
                 self._filename,
                 " line " + str(self._lineno) if self._lineno else "",
+                ', violating "' + self._rule + '" rule' if self._rule else "",
                 self.args[0],
             )
         else:

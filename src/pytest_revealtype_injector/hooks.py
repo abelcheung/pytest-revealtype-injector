@@ -49,7 +49,7 @@ def pytest_collection_finish(session: pytest.Session) -> None:
             adp.run_typechecker_on(files)
         except Exception as e:
             _logger.error(f"({adp.id}) {e}")
-            raise e
+            pytest.exit(f"({type(e).__name__}) " + str(e), pytest.ExitCode.INTERNAL_ERROR)
         else:
             _logger.info(f"({adp.id}) Type checker ran successfully")
 

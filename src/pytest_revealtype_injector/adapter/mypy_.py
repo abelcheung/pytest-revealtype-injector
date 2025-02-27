@@ -199,11 +199,12 @@ class MypyAdapter(TypeCheckerAdapter):
             # but not mypy.api.run(), as of 1.13.
             if diag["severity"] != "note":
                 raise TypeCheckerError(
-                    "Mypy {} with exit code {}: {}".format(
-                        diag["severity"], returncode, diag["message"]
+                    "{} {} with exit code {}: {}".format(
+                        self.id, diag["severity"], returncode, diag["message"]
                     ),
                     diag["file"],
                     diag["line"],
+                    diag["code"],
                 )
             if (m := self._type_mesg_re.fullmatch(diag["message"])) is None:
                 continue

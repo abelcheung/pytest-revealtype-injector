@@ -6,16 +6,21 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
 from collections.abc import (
     Iterable,
 )
 from typing import (
     ForwardRef,
     Literal,
-    TypedDict,
     TypeVar,
     cast,
 )
+
+if sys.version_info >= (3, 11):
+    from typing import NotRequired, TypedDict
+else:
+    from typing_extensions import NotRequired, TypedDict
 
 import schema as s
 
@@ -46,7 +51,7 @@ class _PyrightDiagItem(TypedDict):
     severity: Literal["information", "warning", "error"]
     message: str
     range: _PyrightDiagRange
-
+    rule: NotRequired[str]
 
 class NameCollector(NameCollectorBase):
     type_checker = "pyright"
@@ -139,7 +144,15 @@ class PyrightAdapter(TypeCheckerAdapter):
             lineno = diag["range"]["start"]["line"] + 1
             filename = pathlib.Path(diag["file"]).name
             if proc.returncode:
-                raise TypeCheckerError(diag["message"], filename, lineno)
+                assert "rule" in diag
+                raise TypeCheckerError(
+                    "{} {} with exit code {}: {}".format(
+                        self.id, diag["severity"], proc.returncode, diag["message"]
+                    ),
+                    filename,
+                    lineno,
+                    diag["rule"],
+                )
             if (m := self._type_mesg_re.fullmatch(diag["message"])) is None:
                 continue
             pos = FilePos(filename, lineno)
