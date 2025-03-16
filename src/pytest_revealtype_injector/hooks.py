@@ -17,7 +17,6 @@ adapter_stash_key: pytest.StashKey[set[TypeCheckerAdapter]]
 def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
     assert pyfuncitem.module is not None
     adapters = pyfuncitem.config.stash[adapter_stash_key].copy()
-    injected = functools.partial(revealtype_injector, adapters=adapters)
 
     for name in dir(pyfuncitem.module):
         if name.startswith("__") or name.startswith("@py"):
@@ -25,21 +24,32 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
 
         item = getattr(pyfuncitem.module, name)
         if inspect.isfunction(item):
-            if item.__name__ == "reveal_type" and item.__module__ in {
+            if item.__name__ != "reveal_type" or item.__module__ not in {
                 "typing",
                 "typing_extensions",
             }:
-                setattr(pyfuncitem.module, name, injected)
-                _logger.info(f"Replaced {name}() from global import with {injected}")
                 continue
+            injected = functools.partial(
+                revealtype_injector,
+                adapters=adapters,
+                rt_funcname=name,
+            )
+            setattr(pyfuncitem.module, name, injected)
+            _logger.info(f"Replaced {name}() from global import with {injected}")
+            break
 
-        if inspect.ismodule(item):
+        elif inspect.ismodule(item):
             if item.__name__ not in {"typing", "typing_extensions"}:
                 continue
             assert hasattr(item, "reveal_type")
+            injected = functools.partial(
+                revealtype_injector,
+                adapters=adapters,
+                rt_funcname=f"{name}.reveal_type",
+            )
             setattr(item, "reveal_type", injected)
             _logger.info(f"Replaced {name}.reveal_type() with {injected}")
-            continue
+            break
 
 
 def pytest_collection_finish(session: pytest.Session) -> None:
@@ -49,7 +59,9 @@ def pytest_collection_finish(session: pytest.Session) -> None:
             adp.run_typechecker_on(files)
         except Exception as e:
             _logger.error(f"({adp.id}) {e}")
-            pytest.exit(f"({type(e).__name__}) " + str(e), pytest.ExitCode.INTERNAL_ERROR)
+            pytest.exit(
+                f"({type(e).__name__}) " + str(e), pytest.ExitCode.INTERNAL_ERROR
+            )
         else:
             _logger.info(f"({adp.id}) Type checker ran successfully")
 
