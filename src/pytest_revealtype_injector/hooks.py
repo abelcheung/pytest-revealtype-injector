@@ -54,6 +54,8 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
 
 def pytest_collection_finish(session: pytest.Session) -> None:
     files = {i.path for i in session.items}
+    if not files:
+        return
     for adp in session.config.stash[adapter_stash_key]:
         try:
             adp.run_typechecker_on(files)
