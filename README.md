@@ -5,7 +5,7 @@
 
 `pytest-revealtype-injector` is a `pytest` plugin for replacing [`reveal_type()`](https://docs.python.org/3/library/typing.html#typing.reveal_type) calls inside test functions as something more sophisticated. It does the following tasks in parallel:
 
-- Launch external static type checkers (`pyright` and `mypy`) and store `reveal_type` results.
+- Launch external static type checkers (`basesdpyright`, `pyright` and `mypy`) and store `reveal_type` results.
 - Use [`typeguard`](https://github.com/agronholm/typeguard) to verify the aforementioned static type checker result _really_ matches runtime code result.
 
 ## Usage
@@ -22,7 +22,17 @@ For using `reveal_type()` inside tests, there is no boiler plate code involved. 
 from typing import reveal_type
 ```
 
-Just importing `typing` module is fine too (or import `typing_extensions` for Python 3.10, because `reveal_type()` is only available officially since 3.11):
+If you care about compatibility with older pythons, use:
+
+```python
+import sys
+if sys.version >= (3, 11):
+    from typing import reveal_type
+else:
+    from typing_extensions import reveal_type
+```
+
+Just importing `typing` (or `typing_extensions`) module is fine too:
 
 ```python
 import typing
@@ -32,7 +42,7 @@ def test_something():
     typing.reveal_type(x)  # typeguard fails here
 ```
 
-Since this plugin scans for `reveal_type()` for replacement under carpet, even `import ... as ...` syntax works too:
+Since this plugin scans for `reveal_type()` for replacement under carpet, even `import ... as ...` syntax works:
 
 ```python
 import typing as typ  # or...
@@ -52,7 +62,12 @@ def test_something():
     reveal_type(x)  # calls vanilla reveal_type()
 ```
 
-2. `reveal_type()` calls have to stay in a single line, without anything else. This limitation comes from using [`eval` mode in AST parsing](https://docs.python.org/3/library/ast.html#ast.Expression).
+2. `reveal_type()` calls have to stay within a single line, although you can use `reveal_type` result in assertion or other purpose:
+
+```python
+x = "1"
+assert reveal_type(str(int(x))) == x
+```
 
 ## Logging
 
