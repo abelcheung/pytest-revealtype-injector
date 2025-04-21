@@ -69,6 +69,33 @@ x = "1"
 assert reveal_type(str(int(x))) == x
 ```
 
+## Disable type checker with marker
+
+Using [pytest marker](https://docs.pytest.org/en/stable/example/markers.html), it is possible to disable usage of certain type checker for specific test. All 3 types of markers (function, class and module level) are supported.
+
+Function level:
+```python
+@pytest.mark.notypechecker("mypy")
+def test_something(self) -> None:
+    x = 1
+    reveal_type(x)
+```
+
+Class level:
+```python
+@pytest.mark.notypechecker("pyright")
+class TestSomething:
+    def test_foo(self) -> None:
+    ...
+```
+
+Module level:
+```python
+pytestmark = pytest.mark.notypechecker("basedpyright", "pyright")
+```
+
+Note that disabling all type checkers is disallowed, and such tests would be treated as `pytest.fail`. Disable the `reveal_type()` call instead.
+
 ## Logging
 
 This plugin uses standard [`logging`](https://docs.python.org/3/library/logging.html) internally. `pytest -v` can be used to reveal `INFO` and `DEBUG` logs. Given following example:

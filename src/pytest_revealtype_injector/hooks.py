@@ -16,8 +16,22 @@ adapter_stash_key: pytest.StashKey[set[TypeCheckerAdapter]]
 
 def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
     assert pyfuncitem.module is not None
-    adapters = pyfuncitem.config.stash[adapter_stash_key].copy()
+    adp_stash = pyfuncitem.config.stash[adapter_stash_key]
 
+    # Disable type checker based on marker
+    mark = pyfuncitem.get_closest_marker("notypechecker")
+    if mark:
+        disabled_adapters = {a.id for a in adp_stash if a.id in mark.args}
+        for a in disabled_adapters:
+            _logger.info(f"{a} adapter disabled by 'notypechecker' marker")
+        adapters = {a for a in adp_stash if a.id not in disabled_adapters}
+    else:
+        adapters = {a for a in adp_stash}
+
+    if not adapters:
+        pytest.fail("All type checkers have been disabled.")
+
+    # Replace reveal_type() with our own function
     for name in dir(pyfuncitem.module):
         if name.startswith("__") or name.startswith("@py"):
             continue
@@ -88,13 +102,16 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    # Globally disable adapters using command line options
     global adapter_stash_key
     adapter_stash_key = pytest.StashKey[set[TypeCheckerAdapter]]()
     config.stash[adapter_stash_key] = set()
     verbosity = config.get_verbosity(config.VERBOSITY_TEST_CASES)
     log.set_verbosity(verbosity)
     to_be_disabled = cast(list[str], config.getoption("revealtype_disable_adapter"))
+    all_ids: list[str] = []
     for klass in adapter.get_adapter_classes():
+        all_ids.append(klass.id)
         if klass.id in to_be_disabled:
             _logger.info(f"({klass.id}) adapter disabled with command line option")
             continue
@@ -102,3 +119,11 @@ def pytest_configure(config: pytest.Config) -> None:
         adp.set_config_file(config)
         adp.log_verbosity = verbosity
         config.stash[adapter_stash_key].add(adp)
+
+    # Marker to disable adapters on demand
+    config.addinivalue_line(
+        "markers",
+        "notypechecker(name, ...): mark reveal_type() test to disable "
+        "specified type checker(s). Following type checkers are supported: "
+        + ", ".join(all_ids),
+    )
