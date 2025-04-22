@@ -15,7 +15,7 @@ from typing import (
 )
 
 import pytest
-from _pytest.config import Notset
+from _pytest.config import Notset  # pyright: ignore[reportPrivateImportUsage]
 from schema import Schema
 
 from .log import get_logger
