@@ -53,6 +53,7 @@ class _PyrightDiagItem(TypedDict):
     range: _PyrightDiagRange
     rule: NotRequired[str]
 
+
 class NameCollector(NameCollectorBase):
     type_checker = "pyright"
     # Pre-register common used bare names from typing
