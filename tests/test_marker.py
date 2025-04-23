@@ -60,6 +60,7 @@ class TestFuncAndGlobalMarker:
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=1, failed=0)
 
+
 class TestClassMarker:
     PYPROJECT_TOML = """
     [tool.pyright]
