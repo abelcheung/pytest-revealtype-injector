@@ -30,7 +30,7 @@ jobs:
       contents: write
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: ${{ github.ref }}
         fetch-depth: 0
@@ -39,7 +39,7 @@ jobs:
       run: echo -e "\n<!-- insertion placeholder -->\n" > CHANGELOG.md
 
     - name: Forced version bump
-      uses: python-semantic-release/python-semantic-release@v10.2.0
+      uses: python-semantic-release/python-semantic-release@v10.4.1
       if: inputs.is_forced == 'true'
       id: forced
       with:
@@ -55,7 +55,7 @@ jobs:
         vcs_release: false
 
     - name: Unforced version bump
-      uses: python-semantic-release/python-semantic-release@v10.2.0
+      uses: python-semantic-release/python-semantic-release@v10.4.1
       if: inputs.is_forced == 'false'
       id: unforced
       with:
@@ -113,7 +113,7 @@ jobs:
         path: CHANGELOG.md
         retention-days: 3
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         version: "0.6.16"
         enable-cache: true
@@ -142,7 +142,7 @@ jobs:
       id-token: write
     steps:
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: dist
         path: dist
@@ -168,16 +168,16 @@ jobs:
       id-token: write
       attestations: write
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: dist
         path: dist
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: changelog
 
-    - uses: actions/attest-build-provenance@v2
+    - uses: actions/attest-build-provenance@v3
       with:
         subject-path: |
           dist/*.whl
