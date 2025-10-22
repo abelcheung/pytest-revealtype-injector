@@ -39,7 +39,7 @@ jobs:
       run: echo -e "\n<!-- insertion placeholder -->\n" > CHANGELOG.md
 
     - name: Forced version bump
-      uses: python-semantic-release/python-semantic-release@v10.4.1
+      uses: python-semantic-release/python-semantic-release@v9
       if: inputs.is_forced == 'true'
       id: forced
       with:
@@ -55,7 +55,7 @@ jobs:
         vcs_release: false
 
     - name: Unforced version bump
-      uses: python-semantic-release/python-semantic-release@v10.4.1
+      uses: python-semantic-release/python-semantic-release@v9
       if: inputs.is_forced == 'false'
       id: unforced
       with:
