@@ -35,6 +35,7 @@ jobs:
       run: |
         uv venv --python-preference only-managed
         uv pip install -r pyproject.toml
+        uv pip install mypy pyright basedpyright
 
     # Tests with different pytest options can't run together
     # Pytester is session wide fixture

@@ -16,9 +16,6 @@ license = 'MIT'
 license-files = ['COPYING*']
 dependencies = [
     'typing_extensions >= 4.0; python_version < "3.11"',
-    'mypy >= 1.11.2',
-    'pyright >= 1.1',
-    'basedpyright >= 1.0',
     'pytest >=7.0,<9',
     'typeguard >= 4.3',
     # schema with annotation support is still unreleased

@@ -51,7 +51,7 @@ from typing import reveal_type as rt
 
 ### Limitations
 
-But there are 2 caveats.
+But there are 3 caveats.
 
 1. This plugin only searches for global import in test files, so local import inside test function doesn't work. That means following code doesn't utilize this plugin at all:
 
@@ -68,6 +68,8 @@ def test_something():
 x = "1"
 assert reveal_type(str(int(x))) == x
 ```
+
+3. This plugin does not enlist any type checker as dependency, because any of them can be optionally disabled with pytest marker (see below) or command line option. It is up to application or library authors to include suitable type checker(s) as dependency themselves.
 
 ## Disable type checker with marker
 
