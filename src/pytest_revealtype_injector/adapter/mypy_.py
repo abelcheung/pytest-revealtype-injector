@@ -125,6 +125,10 @@ class NameCollector(NameCollectorBase):
     # something like "test_elem_class_lookup.FooClass@97".
     # Return only the left operand after processing.
     def visit_BinOp(self, node: ast.BinOp) -> ast.expr:
+        if isinstance(node.op, ast.BitOr):  # union
+            node.left = self.visit(node.left)
+            node.right = self.visit(node.right)
+            return node
         if isinstance(node.op, ast.MatMult) and isinstance(node.right, ast.Constant):
             return cast("ast.expr", self.visit(node.left))
         # For expression that haven't been accounted for, just don't
