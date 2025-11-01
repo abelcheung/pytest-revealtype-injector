@@ -39,7 +39,7 @@ jobs:
       run: echo -e "\n<!-- insertion placeholder -->\n" > CHANGELOG.md
 
     - name: Forced version bump
-      uses: python-semantic-release/python-semantic-release@v9
+      uses: python-semantic-release/python-semantic-release@v10
       if: inputs.is_forced == 'true'
       id: forced
       with:
@@ -55,7 +55,7 @@ jobs:
         vcs_release: false
 
     - name: Unforced version bump
-      uses: python-semantic-release/python-semantic-release@v9
+      uses: python-semantic-release/python-semantic-release@v10
       if: inputs.is_forced == 'false'
       id: unforced
       with:
@@ -107,7 +107,7 @@ jobs:
         git push -u origin
         git push -u origin ${{ steps.semver-result.outputs.tag }}
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: changelog
         path: CHANGELOG.md
@@ -122,7 +122,7 @@ jobs:
     - name: Build package
       run: uv build
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: dist
         path: dist/*
@@ -141,7 +141,7 @@ jobs:
       id-token: write
     steps:
 
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         name: dist
         path: dist
@@ -167,12 +167,12 @@ jobs:
       id-token: write
       attestations: write
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         name: dist
         path: dist
 
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v6
       with:
         name: changelog
 
