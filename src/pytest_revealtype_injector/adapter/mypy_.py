@@ -149,6 +149,7 @@ def _strip_unwanted_char(input: str) -> str:
         try:
             _ = ast.parse(result)
         except SyntaxError as e:
+            assert e.offset is not None
             result = result[:e.offset-1] + result[e.offset:]
         else:
             return result
