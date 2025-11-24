@@ -136,6 +136,24 @@ class NameCollector(NameCollectorBase):
         return node
 
 
+# Mypy can insert extra character into expression so that it
+# becomes invalid and unparsable. 0.9x days there
+# was '*', and now '?' (and '=' for typeddict too).
+# Instead of globally throwing them away (and causing
+# literal string constants to not match), we iteratively
+# remove chars one by one only where parsing error occurs.
+#
+def _strip_unwanted_char(input: str) -> str:
+    result = input
+    while True:
+        try:
+            _ = ast.parse(result)
+        except SyntaxError as e:
+            result = result[:e.offset-1] + result[e.offset:]
+        else:
+            return result
+
+
 class MypyAdapter(TypeCheckerAdapter):
     id = "mypy"
     _executable = ""  # unused, calls mypy.api.run() here
@@ -212,12 +230,7 @@ class MypyAdapter(TypeCheckerAdapter):
                 )
             if (m := self._type_mesg_re.fullmatch(diag["message"])) is None:
                 continue
-            # Mypy can insert extra character into expression so that it
-            # becomes invalid and unparsable. 0.9x days there
-            # was '*', and now '?' (and '=' for typeddict too).
-            # Try stripping those character and pray we get something
-            # usable for evaluation
-            expression = m["type"].translate({ord(c): None for c in "*?="})
+            expression = _strip_unwanted_char(m["type"])
             try:
                 # Unlike pyright, mypy output doesn't contain variable name
                 self.typechecker_result[pos] = VarType(None, ForwardRef(expression))
