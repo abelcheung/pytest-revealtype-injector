@@ -16,7 +16,7 @@ license = 'MIT'
 license-files = ['COPYING*']
 dependencies = [
     'typing_extensions >= 4.0; python_version < "3.11"',
-    'pytest >=7.0,<9',
+    'pytest >=7.0',
     'typeguard >= 4.3',
     'schema >= 0.7.8',
 ]
