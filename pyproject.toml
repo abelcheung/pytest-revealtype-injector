@@ -18,8 +18,7 @@ dependencies = [
     'typing_extensions >= 4.0; python_version < "3.11"',
     'pytest >=7.0,<9',
     'typeguard >= 4.3',
-    # schema with annotation support is still unreleased
-    'schema == 0.7.7',
+    'schema >= 0.7.8',
 ]
 keywords = [
     'pytest',
@@ -74,13 +73,11 @@ packages = ["src/pytest_revealtype_injector"]
 typeCheckingMode = 'strict'
 enableTypeIgnoreComments = false
 deprecateTypingAliases = true
-reportMissingTypeStubs = false
 
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 packages = "pytest_revealtype_injector"
 strict = true
-ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py312"
