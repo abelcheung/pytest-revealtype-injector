@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+from collections.abc import Iterator
 from typing import cast
 
 import pytest
@@ -14,7 +15,8 @@ _logger = log.get_logger()
 adapter_stash_key: pytest.StashKey[set[TypeCheckerAdapter]]
 
 
-def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
+@pytest.hookimpl(wrapper=True)
+def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
     assert pyfuncitem.module is not None
     adp_stash = pyfuncitem.config.stash[adapter_stash_key]
 
@@ -23,7 +25,7 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
     if mark:
         disabled_adapters = {a.id for a in adp_stash if a.id in mark.args}
         for a in disabled_adapters:
-            _logger.info(f"{a} adapter disabled by 'notypechecker' marker")
+            _logger.info(f"{a} adapter disabled by 'notypechecker' marker in {pyfuncitem.name} test")
         adapters = {a for a in adp_stash if a.id not in disabled_adapters}
     else:
         adapters = {a for a in adp_stash}
@@ -31,39 +33,43 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> None:
     if not adapters:
         pytest.fail("All type checkers have been disabled.")
 
-    # Replace reveal_type() with our own function
-    for name in dir(pyfuncitem.module):
-        if name.startswith("__") or name.startswith("@py"):
-            continue
-
-        item = getattr(pyfuncitem.module, name)
-        if inspect.isfunction(item):
-            if item.__name__ != "reveal_type" or item.__module__ not in {
-                "typing",
-                "typing_extensions",
-            }:
+    # Monkeypatch reveal_type() with our own function, to guarantee
+    # each test func can receive different adapters
+    with pytest.MonkeyPatch.context() as mp:
+        for name in dir(pyfuncitem.module):
+            if name.startswith("__") or name.startswith("@py"):
                 continue
-            injected = functools.partial(
-                revealtype_injector,
-                adapters=adapters,
-                rt_funcname=name,
-            )
-            setattr(pyfuncitem.module, name, injected)
-            _logger.info(f"Replaced {name}() from global import with {injected}")
-            break
 
-        elif inspect.ismodule(item):
-            if item.__name__ not in {"typing", "typing_extensions"}:
-                continue
-            assert hasattr(item, "reveal_type")
-            injected = functools.partial(
-                revealtype_injector,
-                adapters=adapters,
-                rt_funcname=f"{name}.reveal_type",
-            )
-            setattr(item, "reveal_type", injected)
-            _logger.info(f"Replaced {name}.reveal_type() with {injected}")
-            break
+            item = getattr(pyfuncitem.module, name)
+            if inspect.isfunction(item):
+                if item.__name__ != "reveal_type" or item.__module__ not in {
+                    "typing",
+                    "typing_extensions",
+                }:
+                    continue
+                injected = functools.partial(
+                    revealtype_injector,
+                    adapters=adapters,
+                    rt_funcname=name,
+                )
+                mp.setattr(pyfuncitem.module, name, injected)
+                _logger.info(f"Replaced {name}() from global import with {injected} in {pyfuncitem.name} test")
+                break
+
+            elif inspect.ismodule(item):
+                if item.__name__ not in {"typing", "typing_extensions"}:
+                    continue
+                assert hasattr(item, "reveal_type")
+                injected = functools.partial(
+                    revealtype_injector,
+                    adapters=adapters,
+                    rt_funcname=f"{name}.reveal_type",
+                )
+                mp.setattr(item, "reveal_type", injected)
+                _logger.info(f"Replaced {name}.reveal_type() with {injected} in {pyfuncitem.name} test")
+                break
+
+        return cast(None, (yield))
 
 
 def pytest_collection_finish(session: pytest.Session) -> None:
