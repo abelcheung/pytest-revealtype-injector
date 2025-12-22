@@ -31,6 +31,9 @@ jobs:
           ./pyproject.toml
 
     - name: Execute pytest
-      run: |
-        uvx pytest --with-requirements .\pyproject.toml -w mypy -w pyright -w basedpyright
+      run: >
+        uvx
+        --with-requirements pyproject.toml
+        -w mypy -w pyright -w basedpyright
+        pytest -vv
 

@@ -69,7 +69,7 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
                 _logger.info(f"Replaced {name}.reveal_type() with {injected} in {pyfuncitem.name} test")
                 break
 
-        return cast(None, (yield))
+        return cast(None, (yield))  # type: ignore[redundant-cast]
 
 
 def pytest_collection_finish(session: pytest.Session) -> None:
