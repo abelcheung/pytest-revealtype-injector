@@ -30,41 +30,7 @@ jobs:
         cache-dependency-glob: |
           ./pyproject.toml
 
-    - name: Install prerequisites
+    - name: Execute pytest
       run: |
-        uv venv --python-preference only-managed
-        uv pip install -r pyproject.toml
-        uv pip install mypy pyright basedpyright
+        uvx pytest --with-requirements .\pyproject.toml -w mypy -w pyright -w basedpyright
 
-    # Tests with different pytest options can't run together
-    # Pytester is session wide fixture
-
-    - name: Pytest - import tests
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_import.py
-
-    - name: Pytest - option tests (1)
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_options.py::TestDisableTypeChecker::test_disable_mypy_fail
-
-    - name: Pytest - option tests (2)
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_options.py::TestDisableTypeChecker::test_disable_mypy_pass
-
-    - name: Pytest - option tests (3)
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_options.py::TestDisableTypeChecker::test_enable_mypy_only
-
-    - name: Pytest - AST tests
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_ast_mode.py
-
-    - name: Pytest - Marker tests
-      run: |
-        source .venv/bin/activate
-        pytest tests/test_marker.py
