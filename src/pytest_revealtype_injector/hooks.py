@@ -25,7 +25,9 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
     if mark:
         disabled_adapters = {a.id for a in adp_stash if a.id in mark.args}
         for a in disabled_adapters:
-            _logger.info(f"{a} adapter disabled by 'notypechecker' marker in {pyfuncitem.name} test")
+            _logger.info(
+                f"{a} adapter disabled by 'notypechecker' marker in {pyfuncitem.name} test"
+            )
         adapters = {a for a in adp_stash if a.id not in disabled_adapters}
     else:
         adapters = {a for a in adp_stash}
@@ -53,7 +55,9 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
                     rt_funcname=name,
                 )
                 mp.setattr(pyfuncitem.module, name, injected)
-                _logger.info(f"Replaced {name}() from global import with {injected} in {pyfuncitem.name} test")
+                _logger.info(
+                    f"Replaced {name}() from global import with {injected} in {pyfuncitem.name} test"
+                )
                 break
 
             elif inspect.ismodule(item):
@@ -66,7 +70,9 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
                     rt_funcname=f"{name}.reveal_type",
                 )
                 mp.setattr(item, "reveal_type", injected)
-                _logger.info(f"Replaced {name}.reveal_type() with {injected} in {pyfuncitem.name} test")
+                _logger.info(
+                    f"Replaced {name}.reveal_type() with {injected} in {pyfuncitem.name} test"
+                )
                 break
 
         return cast(None, (yield))  # type: ignore[redundant-cast]
