@@ -126,3 +126,6 @@ FAILED tests/runtime/test_attrib.py::TestAttrib::test_superfluous - typeguard.Ty
 ## History
 
 This pytest plugin starts its life as part of testsuite related utilities within [`types-lxml`](https://github.com/abelcheung/types-lxml). As `lxml` is a `cython` project and probably never incorporate inline python annotation in future, there is need to compare runtime result to static type checker output for discrepancy. As time goes by, it starts to make sense to manage as an independent project.
+
+License-wise, originally it was part of `types-lxml` project, which is released under Apache-2.0 license. But as the sole author, it is at my own discretion to follow pytest
+license (which is MIT) because this project is taking shape as a pytest plugin.
