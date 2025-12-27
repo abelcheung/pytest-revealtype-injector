@@ -11,6 +11,7 @@ from typing import (
     ClassVar,
     ForwardRef,
     NamedTuple,
+    TypeVar,
     cast,
 )
 
@@ -96,6 +97,32 @@ class NameCollectorBase(ast.NodeTransformer):
             return node.value
         else:
             return node
+
+
+# Some type checkers always produce bare names only,
+# so we can skip Attribute nodes entirely
+class BareNameCollector(NameCollectorBase):
+    type_checker = ""
+    # Pre-register common used bare names from typing
+    collected = NameCollectorBase.collected | {
+        k: v
+        for k, v in NameCollectorBase.collected["typing"].__dict__.items()
+        if k[0].isupper() and not isinstance(v, TypeVar)
+    }
+
+    def visit_Name(self, node: ast.Name) -> ast.Name:
+        name = node.id
+        try:
+            eval(name, self._globalns, self._localns | self.collected)
+        except NameError:
+            for m in ("typing", "typing_extensions"):
+                if not hasattr(self.collected[m], name):
+                    continue
+                obj = getattr(self.collected[m], name)
+                self.collected[name] = obj
+                return node
+            raise
+        return node
 
 
 class TypeCheckerAdapter:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import json
 import pathlib
 import re
@@ -13,7 +12,6 @@ from collections.abc import (
 from typing import (
     ForwardRef,
     Literal,
-    TypeVar,
     cast,
 )
 
@@ -26,8 +24,8 @@ import schema as s
 
 from ..log import get_logger
 from ..models import (
+    BareNameCollector,
     FilePos,
-    NameCollectorBase,
     TypeCheckerAdapter,
     TypeCheckerError,
     VarType,
@@ -54,33 +52,8 @@ class _PyrightDiagItem(TypedDict):
     rule: NotRequired[str]
 
 
-class NameCollector(NameCollectorBase):
+class NameCollector(BareNameCollector):
     type_checker = "pyright"
-    # Pre-register common used bare names from typing
-    collected = NameCollectorBase.collected | {
-        k: v
-        for k, v in NameCollectorBase.collected["typing"].__dict__.items()
-        if k[0].isupper() and not isinstance(v, TypeVar)
-    }
-
-    # Pyright inferred type results always contain bare names only,
-    # so don't need to bother with visit_Attribute()
-    def visit_Name(self, node: ast.Name) -> ast.Name:
-        name = node.id
-        try:
-            eval(name, self._globalns, self._localns | self.collected)
-        except NameError:
-            for m in ("typing", "typing_extensions"):
-                if not hasattr(self.collected[m], name):
-                    continue
-                obj = getattr(self.collected[m], name)
-                self.collected[name] = obj
-                _logger.debug(
-                    f"{self.type_checker} NameCollector resolved '{name}' as {obj}"
-                )
-                return node
-            raise
-        return node
 
 
 class PyrightAdapter(TypeCheckerAdapter):
