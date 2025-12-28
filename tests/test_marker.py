@@ -79,7 +79,7 @@ class TestClassMarker:
     else:
         from typing_extensions import reveal_type
 
-    # @pytest.mark.notypechecker('pyright', 'basedpyright')
+    # @pytest.mark.notypechecker('pyright', 'basedpyright', 'ty')
     class TestFoo:
         def test_foo(self) -> None:
             MYPY = False

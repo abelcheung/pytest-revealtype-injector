@@ -60,7 +60,7 @@ class TestDisableTypeChecker:
             """
         )
         content_masked = self.content_fail.format(
-            "pyright: ignore[reportAssignmentType]",
+            "pyright: ignore[reportAssignmentType]  # ty: ignore[invalid-assignment]",
         )
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             content_masked
