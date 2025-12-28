@@ -34,7 +34,7 @@ jobs:
       run: |
         uv venv --python-preference only-managed
         uv pip install -r pyproject.toml
-        uv pip install mypy pyright basedpyright
+        uv pip install mypy pyright basedpyright ty
 
     - name: Run Pyright
       run: |
@@ -53,3 +53,8 @@ jobs:
         source .venv/bin/activate
         mypy src/
 
+    - name: Run Ty
+      if: success() || failure()
+      run: |
+        source .venv/bin/activate
+        ty check src/
