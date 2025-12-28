@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 from ..models import TypeCheckerAdapter
-from . import basedpyright_, mypy_, pyright_
+from . import (
+    basedpyright_,
+    mypy_,
+    pyright_,
+    ty_,
+)
 
 
 # Hardcode will do for now, it's not like we're going to have more
-# adapters soon. Pyre and PyType are not there yet.
+# adapters rapidly or make it user extensible.
 def generate() -> set[TypeCheckerAdapter]:
     return {
         basedpyright_.generate_adapter(),
         pyright_.generate_adapter(),
         mypy_.generate_adapter(),
+        ty_.generate_adapter(),
     }
 
 
@@ -19,4 +25,5 @@ def get_adapter_classes() -> list[type[TypeCheckerAdapter]]:
         basedpyright_.BasedPyrightAdapter,
         pyright_.PyrightAdapter,
         mypy_.MypyAdapter,
+        ty_.TyAdapter,
     ]
