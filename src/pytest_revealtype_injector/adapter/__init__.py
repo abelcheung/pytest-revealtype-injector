@@ -4,6 +4,7 @@ from ..models import TypeCheckerAdapter
 from . import (
     basedpyright_,
     mypy_,
+    pyrefly_,
     pyright_,
     ty_,
 )
@@ -14,8 +15,9 @@ from . import (
 def generate() -> set[TypeCheckerAdapter]:
     return {
         basedpyright_.generate_adapter(),
-        pyright_.generate_adapter(),
         mypy_.generate_adapter(),
+        pyrefly_.generate_adapter(),
+        pyright_.generate_adapter(),
         ty_.generate_adapter(),
     }
 
@@ -23,7 +25,8 @@ def generate() -> set[TypeCheckerAdapter]:
 def get_adapter_classes() -> list[type[TypeCheckerAdapter]]:
     return [
         basedpyright_.BasedPyrightAdapter,
-        pyright_.PyrightAdapter,
         mypy_.MypyAdapter,
+        pyrefly_.PyreflyAdapter,
+        pyright_.PyrightAdapter,
         ty_.TyAdapter,
     ]

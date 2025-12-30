@@ -136,7 +136,7 @@ def revealtype_injector(
         walker = adp.create_collector(globalns, localns)
         try:
             evaluated = eval(ref.__forward_arg__, globalns, localns | walker.collected)
-        except (TypeError, NameError):
+        except (TypeError, NameError, AttributeError):
             old_ast = ast.parse(ref.__forward_arg__, mode="eval")
             new_ast = walker.visit(old_ast)
             if walker.modified:
