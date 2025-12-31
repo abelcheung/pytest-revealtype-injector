@@ -79,8 +79,8 @@ class PyreflyAdapter(TypeCheckerAdapter):
             raise FileNotFoundError(f"{self._executable} is required to run test suite")
 
         cmd.extend(["check", "--output-format", "json"])
-        if True:  # TODO Needs to detect python version from project
-            cmd.extend(["--python-version", "3.11"])
+        if self.config_file is not None:
+            cmd.extend(["-c", str(self.config_file)])
         cmd.extend(str(p) for p in paths)
 
         _logger.debug(f"({self.id}) Run command: {cmd}")
