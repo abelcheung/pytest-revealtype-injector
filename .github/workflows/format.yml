@@ -26,7 +26,7 @@ jobs:
           args: 'format'
           src: '.'
 
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: create-pull-request/formatting
           delete-branch: true
