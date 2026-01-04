@@ -20,20 +20,36 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
     assert pyfuncitem.module is not None
     adp_stash = pyfuncitem.config.stash[adapter_stash_key]
 
-    # Disable type checker based on marker
-    mark = pyfuncitem.get_closest_marker("notypechecker")
-    if mark:
-        disabled_adapters = {a.id for a in adp_stash if a.id in mark.args}
+    # Marker-based adapter filtering
+    notype_mark = pyfuncitem.get_closest_marker("notypechecker")
+    only_mark = pyfuncitem.get_closest_marker("onlytypechecker")
+
+    if notype_mark and only_mark:
+        pytest.fail(
+            "Cannot use both 'notypechecker' and 'onlytypechecker' markers on the same test."
+        )
+
+    if only_mark:
+        enabled_adapters = {a.id for a in adp_stash if a.id in only_mark.args}
+        for a in enabled_adapters:
+            _logger.info(
+                f"{a} adapter enabled by 'onlytypechecker' marker in {pyfuncitem.name} test"
+            )
+        adapters = {a for a in adp_stash if a.id in enabled_adapters}
+
+    elif notype_mark:
+        disabled_adapters = {a.id for a in adp_stash if a.id in notype_mark.args}
         for a in disabled_adapters:
             _logger.info(
                 f"{a} adapter disabled by 'notypechecker' marker in {pyfuncitem.name} test"
             )
         adapters = {a for a in adp_stash if a.id not in disabled_adapters}
+
     else:
         adapters = {a for a in adp_stash}
 
     if not adapters:
-        pytest.fail("All type checkers have been disabled.")
+        pytest.fail("No type checker is enabled.")
 
     # Monkeypatch reveal_type() with our own function, to guarantee
     # each test func can receive different adapters
@@ -137,5 +153,12 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "notypechecker(name, ...): mark reveal_type() test to disable "
         "specified type checker(s). Following type checkers are supported: "
+        + ", ".join(all_ids),
+    )
+    # Marker to enable only specified adapters for a test
+    config.addinivalue_line(
+        "markers",
+        "onlytypechecker(name, ...): mark reveal_type() test to enable "
+        "only the specified type checker(s). Following type checkers are supported: "
         + ", ".join(all_ids),
     )
