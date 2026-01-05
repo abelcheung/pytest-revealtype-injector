@@ -5,12 +5,17 @@
 
 `pytest-revealtype-injector` is a `pytest` plugin for replacing [`reveal_type()`](https://docs.python.org/3/library/typing.html#typing.reveal_type) calls inside test functions as something more sophisticated. It does the following tasks in parallel:
 
-- Launch external static type checkers (`basesdpyright`, `pyright` and `mypy`) and store `reveal_type` results.
+- Launch external static type checkers and store `reveal_type` results.
 - Use [`typeguard`](https://github.com/agronholm/typeguard) to verify the aforementioned static type checker result _really_ matches runtime code result.
 
 ## Usage
 
-In short: install this plugin, create test functions which calls `reveal_type()` with variable or function return result, done.
+TL;DR:
+
+1. Install this plugin
+2. Install type checkers: `basedpyright`, `mypy`, `pyrefly`, `pyright`, `ty`
+    - Disable any unwanted with `--revealtype-disable-adapter=<ADAPTER>` pytest CLI option
+3. Create `pytest` functions which call `reveal_type()` with variable or function return result
 
 ### The longer story
 
@@ -49,9 +54,11 @@ import typing as typ  # or...
 from typing import reveal_type as rt
 ```
 
+To supply config file specific for certain type checker, use `--revealtype-<ADAPTER>-config=<FILE>` pytest CLI option. For example, `--revealtype-pyrefly-config=tests/pyrefly.toml` instructs pyrefly to use `pyrefly.toml` under `tests` folder to override project root config.
+
 ### Limitations
 
-But there are 3 caveats.
+There are 3 caveats.
 
 1. This plugin only searches for global import in test files, so local import inside test function doesn't work. That means following code doesn't utilize this plugin at all:
 
@@ -96,7 +103,15 @@ Module level:
 pytestmark = pytest.mark.notypechecker("basedpyright", "pyright")
 ```
 
-Note that disabling all type checkers is disallowed, and such tests would be treated as `pytest.fail`. Disable the `reveal_type()` call instead.
+Conversely, it is possible to only turn on usage of specific type checkers with `onlytypechecker` marker and exclude all others:
+
+```python
+@pytest.mark.onlytypechecker("mypy")
+def test_for_mypy() -> None:
+    ......
+```
+
+Note that disabling all type checkers is disallowed, and such tests would be treated as failure. Disable the `reveal_type()` call instead.
 
 ## Logging
 
