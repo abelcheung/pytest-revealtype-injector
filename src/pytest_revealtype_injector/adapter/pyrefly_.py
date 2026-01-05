@@ -8,12 +8,11 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Iterable
-from typing import ForwardRef, Literal, TypedDict, cast
-
-if sys.version_info >= (3, 11):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
+from typing import (
+    Literal,
+    TypedDict,
+    cast,
+)
 
 import schema as s
 
@@ -25,6 +24,16 @@ from ..models import (
     TypeCheckerError,
     VarType,
 )
+
+if sys.version_info >= (3, 11):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
+
+if sys.version_info >= (3, 14):
+    from annotationlib import ForwardRef
+else:
+    from typing import ForwardRef
 
 _logger = get_logger()
 
@@ -53,15 +62,16 @@ class NameCollector(BareNameCollector):
         # resolves to a pytest function or method
         return ast.Name(id=node.attr, ctx=node.ctx)
 
+
 class PyreflyAdapter(TypeCheckerAdapter):
     id = "pyrefly"
     _executable = "pyrefly"
-    _type_mesg_re = re.compile(r'revealed type: (?P<type>.+)')
+    _type_mesg_re = re.compile(r"revealed type: (?P<type>.+)")
     _namecollector_class = NameCollector
     _schema = s.Schema({
         "line": int,
         "column": int,
-        "stop_line": int,   
+        "stop_line": int,
         "stop_column": int,
         "path": str,
         "code": int,
@@ -90,12 +100,19 @@ class PyreflyAdapter(TypeCheckerAdapter):
         # of exit status
         if proc.returncode > 0:
             raise TypeCheckerError(
-                "{} error with exit code {}: {}".format(self.id, proc.returncode, proc.stderr.decode()), None, None)
+                "{} error with exit code {}: {}".format(
+                    self.id, proc.returncode, proc.stderr.decode()
+                ),
+                None,
+                None,
+            )
 
         try:
             report = json.loads(proc.stdout)
         except Exception as e:
-            raise TypeCheckerError(f"Failed to parse pyrefly JSON output: {e}", None, None) from e
+            raise TypeCheckerError(
+                f"Failed to parse pyrefly JSON output: {e}", None, None
+            ) from e
 
         assert isinstance(report, dict) and "errors" in report
         items = cast(list[_PyreflyDiagItem], report["errors"])

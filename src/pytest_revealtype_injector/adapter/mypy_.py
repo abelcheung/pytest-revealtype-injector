@@ -5,11 +5,11 @@ import importlib
 import json
 import pathlib
 import re
+import sys
 from collections.abc import (
     Iterable,
 )
 from typing import (
-    ForwardRef,
     Literal,
     TypedDict,
     cast,
@@ -26,6 +26,11 @@ from ..models import (
     TypeCheckerError,
     VarType,
 )
+
+if sys.version_info >= (3, 14):
+    from annotationlib import ForwardRef
+else:
+    from typing import ForwardRef
 
 _logger = get_logger()
 

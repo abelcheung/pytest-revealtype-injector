@@ -4,7 +4,6 @@ import pathlib
 import sys
 from typing import (
     Any,
-    ForwardRef,
     TypeVar,
 )
 
@@ -21,6 +20,12 @@ from .models import (
     TypeCheckerError,
     VarType,
 )
+
+if sys.version_info >= (3, 14):
+    from annotationlib import ForwardRef
+else:
+    from typing import ForwardRef
+
 
 _T = TypeVar("_T")
 _logger = log.get_logger()

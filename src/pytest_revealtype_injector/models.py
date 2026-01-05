@@ -5,11 +5,11 @@ import ast
 import importlib
 import pathlib
 import re
+import sys
 from collections.abc import Iterable
 from typing import (
     Any,
     ClassVar,
-    ForwardRef,
     NamedTuple,
     TypeVar,
     cast,
@@ -20,6 +20,11 @@ from _pytest.config import Notset  # pyright: ignore[reportPrivateImportUsage]
 from schema import Schema
 
 from .log import get_logger
+
+if sys.version_info >= (3, 14):
+    from annotationlib import ForwardRef
+else:
+    from typing import ForwardRef
 
 
 class FilePos(NamedTuple):

@@ -10,15 +10,9 @@ from collections.abc import (
     Iterable,
 )
 from typing import (
-    ForwardRef,
     Literal,
     cast,
 )
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired, TypedDict
-else:
-    from typing_extensions import NotRequired, TypedDict
 
 import schema as s
 
@@ -30,6 +24,16 @@ from ..models import (
     TypeCheckerError,
     VarType,
 )
+
+if sys.version_info >= (3, 11):
+    from typing import NotRequired, TypedDict
+else:
+    from typing_extensions import NotRequired, TypedDict
+
+if sys.version_info >= (3, 14):
+    from annotationlib import ForwardRef
+else:
+    from typing import ForwardRef
 
 _logger = get_logger()
 
