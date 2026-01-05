@@ -81,7 +81,7 @@ class TestDisableTypeChecker:
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
             self.content_fail
         )
-        opts = self._gen_pytest_opts(["basedpyright", "pyright"])
+        opts = self._gen_pytest_opts(["basedpyright", "pyright", "pyrefly", "ty"])
         result = pytester.runpytest(*opts)
         assert result.ret == pytest.ExitCode.INTERNAL_ERROR
         result.assert_outcomes(passed=0, failed=0)
