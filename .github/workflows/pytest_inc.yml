@@ -34,6 +34,6 @@ jobs:
       run: >
         uvx
         --with-requirements pyproject.toml
-        -w mypy -w pyright -w basedpyright -w ty -w pyrefly
+        -w mypy -w pyright -w basedpyright -w ty -w 'pyrefly<0.47'
         pytest -vv
 
