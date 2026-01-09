@@ -18,6 +18,8 @@ jobs:
   check:
     name: Check
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@v6
       with:
