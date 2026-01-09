@@ -1,3 +1,3 @@
 """Pytest plugin for replacing reveal_type() calls inside test functions with static and runtime type checking result comparison, for confirming type annotation validity."""  # noqa: E501
 
-__version__ = "0.7.1"
+__version__ = "0.8.0"
