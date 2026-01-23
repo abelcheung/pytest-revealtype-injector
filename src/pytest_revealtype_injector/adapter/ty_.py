@@ -63,7 +63,7 @@ class NameCollector(BareNameCollector):
 class TyAdapter(TypeCheckerAdapter):
     id = "ty"
     _executable = "ty"
-    _type_mesg_re = re.compile(r'Revealed type: `(?P<type>.+?)`')
+    _type_mesg_re = re.compile(r"Revealed type: `(?P<type>.+?)`")
     _namecollector_class = BareNameCollector
     _schema = s.Schema({
         "check_name": str,
@@ -78,8 +78,8 @@ class TyAdapter(TypeCheckerAdapter):
             "path": str,
             "positions": {
                 "begin": {"line": int, "column": int},
-                "end"  : {"line": int, "column": int},
-            }
+                "end": {"line": int, "column": int},
+            },
         },
     })
 
@@ -152,11 +152,12 @@ class TyAdapter(TypeCheckerAdapter):
             filename, lineno = (
                 pathlib.Path(diag["location"]["path"]).name,
                 diag["location"]["positions"]["begin"]["line"],
-            )            
+            )
             if (m := self._type_mesg_re.search(diag["description"])) is None:
                 continue
             pos = FilePos(filename, lineno)
             self.typechecker_result[pos] = VarType(None, ForwardRef(m["type"]))
+
 
 def generate_adapter() -> TypeCheckerAdapter:
     return TyAdapter()

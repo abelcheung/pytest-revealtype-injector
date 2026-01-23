@@ -62,7 +62,9 @@ class TestOnlyTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# FUNC MARK", "@pytest.mark.onlytypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# FUNC MARK", "@pytest.mark.onlytypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=1, failed=2)
@@ -71,7 +73,9 @@ class TestOnlyTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# CLASS MARK", "@pytest.mark.onlytypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# CLASS MARK", "@pytest.mark.onlytypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=2, failed=1)
@@ -80,7 +84,9 @@ class TestOnlyTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# GLOBAL MARK", "pytestmark = pytest.mark.onlytypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# GLOBAL MARK", "pytestmark = pytest.mark.onlytypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=3, failed=0)
@@ -143,7 +149,9 @@ class TestNoTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# FUNC MARK", "@pytest.mark.notypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# FUNC MARK", "@pytest.mark.notypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=1, failed=2)
@@ -152,7 +160,9 @@ class TestNoTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# CLASS MARK", "@pytest.mark.notypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# CLASS MARK", "@pytest.mark.notypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=2, failed=1)
@@ -161,10 +171,13 @@ class TestNoTypeCheckerMarker:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace("# GLOBAL MARK", "pytestmark = pytest.mark.notypechecker('mypy')")
+            self.TEST_CONTENT.replace(
+                "# GLOBAL MARK", "pytestmark = pytest.mark.notypechecker('mypy')"
+            )
         )
         result = pytester.runpytest("--tb=short", "-vv")
         result.assert_outcomes(passed=3, failed=0)
+
 
 class TestMarkerConflicts:
     PYPROJECT_TOML = """
@@ -178,6 +191,7 @@ class TestMarkerConflicts:
     def test_foo() -> None:
         pass
     """
+
     def test_typechecker_exclusive(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
@@ -185,7 +199,7 @@ class TestMarkerConflicts:
             textwrap.dedent(self.TEST_CONTENT).replace(
                 "# PLACEHOLDER",
                 "@pytest.mark.notypechecker('mypy')\n"
-                "@pytest.mark.onlytypechecker('pyright')"
+                "@pytest.mark.onlytypechecker('pyright')",
             )
         )
         result = pytester.runpytest("--tb=short", "-vv")
@@ -196,10 +210,7 @@ class TestMarkerConflicts:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
         pytester.makepyprojecttoml(self.PYPROJECT_TOML)
         pytester.makepyfile(  # pyright: ignore[reportUnknownMemberType]
-            self.TEST_CONTENT.replace(
-                "# PLACEHOLDER",
-                "@pytest.mark.onlytypechecker()"
-            )
+            self.TEST_CONTENT.replace("# PLACEHOLDER", "@pytest.mark.onlytypechecker()")
         )
         result = pytester.runpytest("--tb=short", "-vv")
         assert result.ret == pytest.ExitCode.INTERNAL_ERROR
