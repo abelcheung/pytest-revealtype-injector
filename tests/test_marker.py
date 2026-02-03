@@ -203,8 +203,8 @@ class TestMarkerConflicts:
             )
         )
         result = pytester.runpytest("--tb=short", "-vv")
-        assert result.ret == pytest.ExitCode.INTERNAL_ERROR
-        result.assert_outcomes(passed=0, failed=0)
+        assert result.ret == pytest.ExitCode.TESTS_FAILED
+        result.assert_outcomes(failed=1)
 
     def test_no_typechecker_left(self, pytester: pytest.Pytester) -> None:
         pytester.makeconftest("pytest_plugins = ['pytest_revealtype_injector.plugin']")
@@ -213,5 +213,5 @@ class TestMarkerConflicts:
             self.TEST_CONTENT.replace("# PLACEHOLDER", "@pytest.mark.onlytypechecker()")
         )
         result = pytester.runpytest("--tb=short", "-vv")
-        assert result.ret == pytest.ExitCode.INTERNAL_ERROR
-        result.assert_outcomes(passed=0, failed=0)
+        assert result.ret == pytest.ExitCode.OK
+        result.assert_outcomes(skipped=1)
