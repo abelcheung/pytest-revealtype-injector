@@ -110,10 +110,12 @@ class PyreflyAdapter(TypeCheckerAdapter):
         try:
             report = json.loads(proc.stdout)
         except Exception as e:
-            raise TypeCheckerError(
-                f"Failed to parse pyrefly JSON output: {e}", None, None
-            ) from e
-
+            # pyrefly (circa 0.47.0) appends github text formatted annotation at the end of json output
+            decoder = json.JSONDecoder()
+            report, _ = decoder.raw_decode(proc.stdout.decode())
+            _logger.warning(
+                f"({self.id}) failed to parse json output, extracted partial json: {e}"
+            )
         assert isinstance(report, dict) and "errors" in report
         items = cast(list[_PyreflyDiagItem], report["errors"])
 
