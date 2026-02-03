@@ -49,7 +49,7 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> Iterator[None]:
         adapters = {a for a in adp_stash}
 
     if not adapters:
-        pytest.fail("No type checker is enabled.")
+        pytest.skip("No type checker is enabled for this test.")
 
     # Monkeypatch reveal_type() with our own function, to guarantee
     # each test func can receive different adapters
