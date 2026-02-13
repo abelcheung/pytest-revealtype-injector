@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Iterator
+from concurrent import futures
 from typing import cast
 
 import pytest
@@ -98,16 +99,27 @@ def pytest_collection_finish(session: pytest.Session) -> None:
     files = {i.path for i in session.items}
     if not files:
         return
-    for adp in session.config.stash[adapter_stash_key]:
+    # Stick with ThreadPoolExecutor
+    # mypy.api.run can't be executed as separate process
+    with futures.ThreadPoolExecutor() as executor:
+        fs = {
+            adp.id: executor.submit(adp.run_typechecker_on, files)
+            for adp in session.config.stash[adapter_stash_key]
+        }
+    exc = None
+    length = max([len(k) for k in fs.keys()]) + 2
+    for adp_id in fs:
         try:
-            adp.run_typechecker_on(files)
+            _ = fs[adp_id].result()
         except Exception as e:
-            _logger.error(f"({adp.id}) {e}")
-            pytest.exit(
-                f"({type(e).__name__}) " + str(e), pytest.ExitCode.INTERNAL_ERROR
-            )
+            print(f"{adp_id:{length}} FAIL")
+            exc = e
         else:
-            _logger.info(f"({adp.id}) Type checker ran successfully")
+            print(f"{adp_id:{length}} OK")
+    if exc is not None:
+        pytest.exit(
+            f"({type(exc).__name__}) " + str(exc), pytest.ExitCode.INTERNAL_ERROR
+        )
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
