@@ -28,70 +28,49 @@ jobs:
   tagged-release:
     permissions:
       contents: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     steps:
     - uses: actions/checkout@v6
       with:
         ref: ${{ github.ref }}
         fetch-depth: 0
 
-    - name: Create dummy changelog
-      run: echo -e "\n<!-- insertion placeholder -->\n" > CHANGELOG.md
+    - uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.9.5"
+        cache-dependency-glob: |
+          ./pyproject.toml
+
+    - name: Install prerequisites
+      run: |
+        uv tool install hatch
+        uv tool install git-cliff
 
     - name: Forced version bump
-      uses: python-semantic-release/python-semantic-release@v9
       if: inputs.is_forced == 'true'
-      id: forced
-      with:
-        # We only use version determination logic and extract
-        # changelog, never does any permanent change with it
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: ${{ inputs.ver_part }}
-        build: false
-        changelog: true
-        commit: false
-        push: false
-        tag: false
-        vcs_release: false
+      run: hatch version ${{ inputs.ver_part }}
 
     - name: Unforced version bump
-      uses: python-semantic-release/python-semantic-release@v9
       if: inputs.is_forced == 'false'
-      id: unforced
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        build: false
-        changelog: true
-        commit: false
-        push: false
-        tag: false
-        vcs_release: false
+      run: hatch version $(git-cliff --bumped-version --unreleased | cut -c2-)
 
-    - name: Combine outputs
+    - name: Detect final version
       id: semver-result
-      if: >-
-        (steps.forced.conclusion == 'success' && steps.forced.outputs.released == 'true') ||
-        (steps.unforced.conclusion == 'success' && steps.unforced.outputs.released == 'true')
       run: |
-        if [[ "${{ steps.forced.outputs.released }}" == true ]]; then
-          echo "version=${{ steps.forced.outputs.version }}" >> $GITHUB_OUTPUT
-          echo "tag=${{ steps.forced.outputs.tag }}" >> $GITHUB_OUTPUT
-        else
-          echo "version=${{ steps.unforced.outputs.version }}" >> $GITHUB_OUTPUT
-          echo "tag=${{ steps.unforced.outputs.tag }}" >> $GITHUB_OUTPUT
-        fi
+        ver=$(hatch version)
+        echo "version=$ver" >> $GITHUB_OUTPUT
+        echo "tag=v$ver" >> $GITHUB_OUTPUT
 
     - name: Detect dirty git tree
       run: |
         if git diff-files --quiet -- src/pytest_revealtype_injector/__init__.py; then
-          echo "::error title=No new version::semantic-release determined no new release would be created"
+          echo "::error title=No new version::No new release would be created"
           exit 1
         else
           git add src/pytest_revealtype_injector/__init__.py
         fi
 
     - uses: qoomon/actions--create-commit@v1
-      id: create-commit
       with:
         message: "chore(release): bump version to ${{ steps.semver-result.outputs.version }}"
         skip-empty: true
@@ -99,7 +78,7 @@ jobs:
     # No bot-signed tag support for annotated tag, even with github REST API
     # However, lightweight tag is automatically verified if underlying commit is so
     - name: Create lightweight tag
-      run: |
+      run:
         git tag ${{ steps.semver-result.outputs.tag }}
 
     - name: Push to repository
@@ -107,17 +86,18 @@ jobs:
         git push -u origin
         git push -u origin ${{ steps.semver-result.outputs.tag }}
 
-    - uses: actions/upload-artifact@v6
+    - name: Generate changelog
+      run: git-cliff --latest -o
+
+    - name: Upload changelog
+      uses: actions/upload-artifact@v6
       with:
         name: changelog
         path: CHANGELOG.md
         retention-days: 3
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.9.5"
-        cache-dependency-glob: |
-          ./pyproject.toml
+    - name: Remove changelog
+      run: rm CHANGELOG.md
 
     - name: Build package
       run: uv build

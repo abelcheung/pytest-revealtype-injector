@@ -121,17 +121,3 @@ pythonpath = [
     "src",
 ]
 
-# We only use version determination logic from python-semantic-release,
-# and never does any permanent change with it
-[tool.semantic_release]
-version_variables = ['src/pytest_revealtype_injector/__init__.py:__version__']
-allow_zero_version = true  # switch off for 1.0.0
-major_on_zero = false  # switch on for 1.0.0
-
-[tool.semantic_release.changelog]
-exclude_commit_patterns = [
-    '^Merge pull request #\d+ from',
-    '^(build|ci|style)(\(.+?\))?: ',
-]
-mode = "update"
-insertion_flag = "<!-- insertion placeholder -->"
