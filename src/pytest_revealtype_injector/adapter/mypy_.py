@@ -39,6 +39,8 @@ class _MypyDiagObj(TypedDict):
     file: str
     line: int
     column: int
+    end_line: int
+    end_column: int
     message: str
     hint: str | None
     code: str
@@ -169,6 +171,8 @@ class MypyAdapter(TypeCheckerAdapter):
         "file": str,
         "line": int,
         "column": int,
+        "end_line": int,
+        "end_column": int,
         "message": str,
         "hint": s.Or(str, s.Schema(None)),
         "code": s.Or(str, s.Schema(None)),
