@@ -63,7 +63,7 @@ def test_foo():
 ```py
 @pytest.mark.notypechecker("pyright", "basedpyright")
 def test_multiple_disabled():
-  reveal_type(x)
+    reveal_type(x)
 ```
 
 - Run pytest with verbose output to see typechecker logs:
