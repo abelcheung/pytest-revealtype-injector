@@ -31,6 +31,7 @@ If you care about compatibility with older pythons, use:
 
 ```python
 import sys
+
 if sys.version >= (3, 11):
     from typing import reveal_type
 else:
@@ -41,6 +42,7 @@ Just importing `typing` (or `typing_extensions`) module is fine too:
 
 ```python
 import typing
+
 
 def test_something():
     x: str = 1  # type: ignore  # pyright: ignore
@@ -65,6 +67,7 @@ There are 3 caveats.
 ```python
 def test_something():
     from typing import reveal_type
+
     x = 1
     reveal_type(x)  # calls vanilla reveal_type()
 ```
@@ -119,7 +122,7 @@ This plugin uses standard [`logging`](https://docs.python.org/3/library/logging.
 
 ```python
 def test_superfluous(self) -> None:
-    x: list[str] = ['a', 'b', 'c', 1]  # type: ignore  # pyright: ignore
+    x: list[str] = ["a", "b", "c", 1]  # type: ignore  # pyright: ignore
     reveal_type(x)
 ```
 
